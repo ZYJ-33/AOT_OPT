@@ -1,0 +1,5 @@
+add_subdirectory(Basic)
+add_subdirectory(Disassembler)
+add_subdirectory(Vistor)
+add_subdirectory(AOT_class)
+add_subdirectory(AOTFileWriter)
