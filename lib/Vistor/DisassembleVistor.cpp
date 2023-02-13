@@ -11,10 +11,8 @@ void DisassmbleVistor::visit(TB& tb)
         memset(res, 0,  sizeof(LoongArchInsInfo));
         insn = *insn_ptr;
         if(!decode(res, insn))
-        {
             std::cerr<<"disassmble insn 0x" << std::hex << insn <<" failed"<<std::endl;
-            res->opc = OPC_INVALID;
-        }
+        res->origin_binary = insn;
         tb.dis_insns.insert_at_tail(res);
         insn_ptr += 1;
         count -= 1;

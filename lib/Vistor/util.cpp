@@ -1,4 +1,6 @@
 #include "Vistor/util.hpp"
+extern int insn2format[];
+extern void(*print_func_table[])(std::ostream&, LoongArchInsInfo*);
 
 void print_one_insn(LoongArchInsInfo& insn)
 {

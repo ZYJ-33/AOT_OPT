@@ -1,5 +1,7 @@
 #include "Vistor/DisassemblePrintVistor.hpp"
 #include <set>
+extern int insn2format[];
+extern void(*print_func_table[])(std::ostream&, LoongArchInsInfo*);
 
 extern std::map<u_int64_t, std::shared_ptr<TB>> x86AddrToTb;
 
@@ -89,7 +91,7 @@ void DisassmblePrinterVistor::visit(TB& tb)
             std::cout<<"false_branch"<<std::endl;
             std::cout<<"{"<<std::endl;
             if(tb.false_branch != nullptr)
-                std::cout<<std::hex<<tb.false_branch->x86_addr<<std::endl;
+                std::cout<<std::hex<<tb.false_branch->x86_addr<<" extra_addend:"<<std::dec<<tb.false_branch->x86_addr - this->seg_start<<std::endl;
             else
                 std::cout<<"next tb not exist yet"<<std::endl;
             print_one_insn(*iter->data); 
@@ -103,7 +105,7 @@ void DisassmblePrinterVistor::visit(TB& tb)
             std::cout<<"true_branch"<<std::endl;
             std::cout<<"{"<<std::endl;
             if(tb.true_branch != nullptr)
-                std::cout<<std::hex<<tb.true_branch->x86_addr<<std::endl;
+                std::cout<<std::hex<<tb.true_branch->x86_addr<<" extra_addend:"<<std::dec<<tb.true_branch->x86_addr - this->seg_start<<std::endl;
             else
                 std::cout<<"next tb not exist yet"<<std::endl;
             print_one_insn(*iter->data); 
