@@ -50,10 +50,11 @@ void FixBranchVistor::fix_b(TB& tb)
 
 void FixBranchVistor::fix_bne(TB& tb)
 {
-     assert(tb.origin_aot_tb->jmp_reset_offsets[0] != TB_JMP_RESET_OFFSET_INVALID && tb.origin_aot_tb->jmp_reset_offsets[1] != TB_JMP_RESET_OFFSET_INVALID);
+   assert(tb.origin_aot_tb->jmp_reset_offsets[0] != TB_JMP_RESET_OFFSET_INVALID && tb.origin_aot_tb->jmp_reset_offsets[1] != TB_JMP_RESET_OFFSET_INVALID);
    
    u_int32_t false_branch_index = tb.origin_aot_tb->jmp_target_arg[0]>>2;
    u_int32_t true_branch_index = tb.origin_aot_tb->jmp_target_arg[1]>>2;
+   u_int32_t cur_index = 0;
    u_int32_t bne_index = 0;
    LoongArchInsInfo* bne_insn = nullptr;
 
@@ -62,12 +63,11 @@ void FixBranchVistor::fix_bne(TB& tb)
         if(iter->data->opc == OPC_BNE)
         {
             bne_insn = iter->data;
-            break;
+            bne_index = cur_index;
         }
-        bne_index += 1;
+        cur_index += 1;
    }
    assert(bne_insn != nullptr);
-
    bne_insn->offs = true_branch_index - bne_index;
 }
 

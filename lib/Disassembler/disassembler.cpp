@@ -4008,12 +4008,15 @@ static inline void encode32(uint32_t* pinsn, uint32_t field, u_int8_t start, u_i
 {
     assert(start < 32 && len < 32 && start+len <= 32);
     uint32_t mask = (1<<len)-1;
+    /*
     if((field & mask) != field)
     {
         std::cerr<<"warning: "<<field <<" can't fit into "<<len<<" bit "<<std::endl;
         exit(1);
     }
+    */
 
+    field &= mask;
     field <<= start;
     *pinsn |= field;
     return;
@@ -4027,12 +4030,15 @@ static inline void encode32_muti_field(uint32_t* pinsn, uint32_t field, u_int8_t
 
     uint32_t mask = (1<<total_len)-1;
 
+    /*
     if((field & mask) != field)
     {
         std::cerr<<"warning: in encode32_muti_field "<<field <<" can't fit into "<<total_len<<" bit "<<std::endl;
         exit(1);
     }
+    */
 
+    field &= mask;
     //may be a problem
     for(int i=0; i<size; i+=2)
     {
@@ -5919,10 +5925,10 @@ void encode_encode_format_42(LoongArchInsInfo *info, uint32_t* pinsn)
 {
 encode32(pinsn, info->srcs_regs[0],5,5);
 u_int8_t start_and_len[4];
-start_and_len[0]=0;
-start_and_len[1]=5;
-start_and_len[2]=10;
-start_and_len[3]=16;
+start_and_len[0]=10;
+start_and_len[1]=16;
+start_and_len[2]=0;
+start_and_len[3]=5;
 encode32_muti_field(pinsn, info->offs, start_and_len, 4);
 }
 
@@ -5930,10 +5936,10 @@ void encode_encode_format_43(LoongArchInsInfo *info, uint32_t* pinsn)
 {
 encode32(pinsn, info->srcs_cfregs[0],5,3);
 u_int8_t start_and_len[4];
-start_and_len[0]=0;
-start_and_len[1]=5;
-start_and_len[2]=10;
-start_and_len[3]=16;
+start_and_len[0]=10;
+start_and_len[1]=16;
+start_and_len[2]=0;
+start_and_len[3]=5;
 encode32_muti_field(pinsn, info->offs, start_and_len, 4);
 }
 
@@ -5947,10 +5953,10 @@ encode32(pinsn, info->offs,10,16);
 void encode_encode_format_45(LoongArchInsInfo *info, uint32_t* pinsn)
 {
 u_int8_t start_and_len[4];
-start_and_len[0]=0;
-start_and_len[1]=10;
-start_and_len[2]=10;
-start_and_len[3]=16;
+start_and_len[0]=10;
+start_and_len[1]=16;
+start_and_len[2]=0;
+start_and_len[3]=10;
 encode32_muti_field(pinsn, info->offs, start_and_len, 4);
 }
 
@@ -6080,10 +6086,10 @@ encode32(pinsn, info->dst_reg,0,5);
 void encode_encode_format_64(LoongArchInsInfo *info, uint32_t* pinsn)
 {
 u_int8_t start_and_len[4];
-start_and_len[0]=0;
-start_and_len[1]=5;
-start_and_len[2]=10;
-start_and_len[3]=16;
+start_and_len[0]=10;
+start_and_len[1]=16;
+start_and_len[2]=0;
+start_and_len[3]=5;
 encode32_muti_field(pinsn, info->offs, start_and_len, 4);
 }
 
