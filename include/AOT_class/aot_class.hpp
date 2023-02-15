@@ -10,22 +10,36 @@
 class TB;
 class TB_Vistor;
 
+class BranchInsnAndOffset
+{
+    public:
+    LoongArchInsInfo* branch_insn;
+    u_int32_t offset;
+    BranchInsnAndOffset(LoongArchInsInfo* branch_insn, u_int32_t offset): branch_insn(branch_insn), offset(offset)
+    {}
+};
+
 class TB
 {
     public:
         u_int32_t size_in_file;
         char* code;
         u_int32_t code_size;
+        bool pipehole_available;
         std::shared_ptr<TB> true_branch;
         std::shared_ptr<TB> false_branch;
         std::vector<std::shared_ptr<TB>> parents;
         std::vector<AOT_rel> rels;
         std::vector<bool> rels_valid; 
         LinkList<LoongArchInsInfo> dis_insns;
+        std::vector<BranchInsnAndOffset> b_insns;
+        std::vector<BranchInsnAndOffset> bne_insns;
+        std::vector<BranchInsnAndOffset> other_b_insns;
+
         ListNode<LoongArchInsInfo>* delete_ith_insn(ListNode<LoongArchInsInfo>* node, u_int64_t i);
         ListNode<LoongArchInsInfo>* delete_ith_insn_alongwith_rel(ListNode<LoongArchInsInfo>* node, u_int64_t i);
         ListNode<LoongArchInsInfo>* delete_ith_rel(u_int64_t i);
-        //std::vector<LoongArchInsInfo> dis_insns;
+        
         AOT_TB* origin_aot_tb;
         u_int64_t x86_addr;
         TB(FILE* f, AOT_TB* aot_tb, u_int32_t SegBegin);
@@ -35,7 +49,7 @@ class TB
         u_int32_t how_many_bytes();
         u_int32_t how_many_rel();
         u_int32_t how_many_code();
-
+        bool pipehole_opt_available();
 };
 
 class Segment

@@ -42,6 +42,107 @@ TB::TB(FILE* f, AOT_TB* aot_tb, u_int32_t SegBegin):origin_aot_tb(aot_tb)
     fseek(f, save, SEEK_SET);
 }
 
+bool TB::pipehole_opt_available()
+{
+   if(origin_aot_tb->jmp_reset_offsets[0] != TB_JMP_RESET_OFFSET_INVALID 
+   && origin_aot_tb->jmp_reset_offsets[1] != TB_JMP_RESET_OFFSET_INVALID)
+   {
+       if(b_insns.size() == 2)  
+       {
+                return (bne_insns.size() == 1 && other_b_insns.size() == 0
+            && b_insns[0].offset == origin_aot_tb->jmp_target_arg[0]/4
+            && b_insns[1].offset == origin_aot_tb->jmp_target_arg[1]/4);
+       }
+       else if(b_insns.size() == 4)
+       {
+            for(u_int32_t i=1; i<4; i+=2)
+            {
+                bool res = false;
+                for(u_int32_t j = 0; j < rels.size(); j++)
+                {
+                    if(rels[j].kind == B_EPILOGUE)
+                    {
+                            if (b_insns[i].offset == rels[j].tc_offset/4)
+                            {
+                                 res = true;
+                                 break;
+                            }
+                    }       
+                }
+                if(!res)
+                     return false;
+            }
+            return (bne_insns.size() == 1 && other_b_insns.size() == 0
+            && b_insns[0].offset == origin_aot_tb->jmp_target_arg[0]/4
+            && b_insns[2].offset == origin_aot_tb->jmp_target_arg[1]/4);
+       }
+       else
+            return false;
+   }
+   else if(origin_aot_tb->jmp_reset_offsets[0] != TB_JMP_RESET_OFFSET_INVALID)
+   {
+        if(b_insns.size() == 1)
+        {
+            return bne_insns.size() == 0 && other_b_insns.size() == 0
+                && b_insns[0].offset == origin_aot_tb->jmp_target_arg[0]/4;
+        }
+        else if(b_insns.size() == 2)
+        {
+                bool res = false;
+                for(u_int32_t j = 0; j < rels.size(); j++)
+                {
+                    if(rels[j].kind == B_EPILOGUE)
+                    {
+                            if (b_insns[1].offset == rels[j].tc_offset/4)
+                            {
+                                 res = true;
+                                 break;
+                            }
+                    }       
+                }
+                if(!res)
+                     return false;
+                return bne_insns.size() == 0 && other_b_insns.size() == 0
+                && b_insns[0].offset == origin_aot_tb->jmp_target_arg[0]/4;
+        }
+        else
+            return false;
+   }
+   else if(origin_aot_tb->jmp_reset_offsets[1] != TB_JMP_RESET_OFFSET_INVALID)
+   {
+        if(b_insns.size() == 1)
+        {
+            return bne_insns.size() == 0 && other_b_insns.size() == 0
+                && b_insns[0].offset == origin_aot_tb->jmp_target_arg[1]/4;
+        }
+        else if(b_insns.size() == 2)
+        {
+                bool res = false;
+                for(u_int32_t j = 0; j < rels.size(); j++)
+                {
+                    if(rels[j].kind == B_EPILOGUE)
+                    {
+                            if (b_insns[1].offset == rels[j].tc_offset/4)
+                            {
+                                 res = true;
+                                 break;
+                            }
+                    }       
+                }
+                if(!res)
+                     return false;
+                return bne_insns.size() == 0 && other_b_insns.size() == 0
+                && b_insns[0].offset == origin_aot_tb->jmp_target_arg[1]/4;
+        }
+        else
+            return false;
+   }
+   else
+   {
+        return b_insns.size() == 1 && bne_insns.size() == 0 && other_b_insns.size() == 0; 
+   }
+}
+
 u_int32_t MyAbs(int32_t a, int32_t b)
 {
     if(a<b)
@@ -90,10 +191,10 @@ ListNode<LoongArchInsInfo>* TB::delete_ith_rel(u_int64_t i)
         AOT_rel& rel = rels[i];
         u_int64_t ith_insn = rel.tc_offset >> 2;
         u_int64_t count = rel.rel_slots_num;
-        ListNode<LoongArchInsInfo>* insn = dis_insns.get(i);
+        ListNode<LoongArchInsInfo>* insn = dis_insns.get(ith_insn);
         while(count > 0)
         {
-            insn = delete_ith_insn_alongwith_rel(insn, i);
+            insn = delete_ith_insn_alongwith_rel(insn, ith_insn);
             count -= 1;
         }
         return insn;

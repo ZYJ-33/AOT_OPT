@@ -31,5 +31,10 @@ void RemoveNonVistor::visit(TB& tb)
 void RemoveNonVistor::start(Segment& seg)
 {
     for(auto tb_ptr : seg._tbs)
-        visit(*tb_ptr);
+    {
+        if(tb_ptr->pipehole_available)
+            visit(*tb_ptr);
+        else
+            std::cout<<std::hex<<"0x"<<tb_ptr->x86_addr<<"is not available for pipehole opt"<<std::endl;
+    }
 }
