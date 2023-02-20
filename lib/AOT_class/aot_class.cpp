@@ -21,6 +21,7 @@ void TB::visit(TB_Vistor& tb)
 
 TB::TB(FILE* f, AOT_TB* aot_tb, u_int32_t SegBegin):origin_aot_tb(aot_tb)
 {
+    has_invalid_insn = false;
     true_branch = nullptr;
     false_branch = nullptr;
     x86_addr = aot_tb->offset_in_segment + SegBegin;

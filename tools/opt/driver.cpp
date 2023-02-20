@@ -6,6 +6,7 @@
 #include "Vistor/AssembleVistor.hpp"
 #include "Vistor/AddRelsVistor.hpp"
 #include "Vistor/FixBranchVistor.hpp"
+#include "Vistor/PeepHoleOPTVistor.hpp"
 #include "AOTFileWriter/AOTFilerWriter.hpp"
 #include <cstdio>
 #include <cassert>
@@ -56,10 +57,12 @@ size_t get_file_size(const char* f)
 void test_write_to_file(const char* opened_file, const char* write_file)
 {
     DisassmbleVistor dis;
+    DisassmblePrinterVistor dis_print;
     RemoveTailVistor rm_tail;
     RemoveNonVistor remove_none;
     TB_AddRels_Vistor add_rels_vistor;
     FixBranchVistor fix_b;
+    PeepHoleOPTVistor peep_hole_opt;
 
     FILE* file = std::fopen(opened_file, "r+");
     FILE* writefile = std::fopen(write_file, "w+");
@@ -71,10 +74,12 @@ void test_write_to_file(const char* opened_file, const char* write_file)
         add_rels_vistor.start(*seg_ptr, &aot_file.get_rels());
         dis.start(*seg_ptr);    
 
-        rm_tail.start(*seg_ptr);
-        remove_none.start(*seg_ptr);
-        
+        dis_print.start(*seg_ptr);
+
+        peep_hole_opt.start(*seg_ptr);
         fix_b.start(*seg_ptr);
+        std::cout<<"========================================\n";
+        dis_print.start(*seg_ptr);
     }
 
     u_int32_t file_sz = aot_file.how_many_bytes();
@@ -92,6 +97,7 @@ void test_read_from_file(const char* opened_file)
     DisassmbleVistor dis;
     TB_AddRels_Vistor add_rels_vistor;
     DisassmblePrinterVistor dis_print;
+    PeepHoleOPTVistor peep_hole_opt;
 
     FILE* file = std::fopen(opened_file, "r+");
     AOT_File aot_file(file);
@@ -100,6 +106,8 @@ void test_read_from_file(const char* opened_file)
         seg_ptr->settle_all_tb(aot_file.get_rels());
         add_rels_vistor.start(*seg_ptr, &aot_file.get_rels());
         dis.start(*seg_ptr);    
+        
+        peep_hole_opt.start(*seg_ptr);
         dis_print.start(*seg_ptr);
     }
 }
@@ -110,7 +118,7 @@ int main(int argc, char** argv)
     const char* write_file = "./write.aot";
 
     test_write_to_file(opened_file, write_file);
-    test_read_from_file(write_file);
+    //test_read_from_file(opened_file);
 }
 /*
 int main(int argc, char** argv)

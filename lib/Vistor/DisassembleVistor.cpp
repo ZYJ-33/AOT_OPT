@@ -13,7 +13,10 @@ void DisassmbleVistor::visit(TB& tb)
 
         insn = *insn_ptr;
         if(!decode(res, insn))
+        {
             std::cerr<<"disassmble insn 0x" << std::hex << insn <<" failed"<<std::endl;
+            tb.has_invalid_insn = true;
+        }
 
         if(res->opc == OPC_B)
             tb.b_insns.emplace_back(res, i);

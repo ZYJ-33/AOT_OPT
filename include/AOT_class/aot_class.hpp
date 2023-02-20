@@ -22,6 +22,7 @@ class BranchInsnAndOffset
 class TB
 {
     public:
+        bool has_invalid_insn;
         u_int32_t size_in_file;
         char* code;
         u_int32_t code_size;
