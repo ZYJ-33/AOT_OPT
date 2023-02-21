@@ -19,6 +19,22 @@ void TB::visit(TB_Vistor& tb)
     tb.visit(*this);
 }
 
+bool TB::in_scope_of_rel(u_int32_t start, u_int32_t count)
+{
+    u_int32_t end_index = start + count - 1;
+    for(u_int32_t i=0; i<rels.size(); i++)
+    {
+        if(rels_valid[i])
+        {
+            u_int32_t rel_start_index = rels[i].tc_offset/4;
+            u_int32_t rel_end_index = rel_start_index + rels[i].rel_slots_num - 1;
+            if(!(end_index < rel_start_index || rel_end_index < start))
+                    return true;
+        }
+    }
+    return false;
+}
+
 TB::TB(FILE* f, AOT_TB* aot_tb, u_int32_t SegBegin):origin_aot_tb(aot_tb)
 {
     has_invalid_insn = false;

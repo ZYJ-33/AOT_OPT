@@ -6,7 +6,8 @@
 #include "Vistor/AssembleVistor.hpp"
 #include "Vistor/AddRelsVistor.hpp"
 #include "Vistor/FixBranchVistor.hpp"
-#include "Vistor/PeepHoleOPTVistor.hpp"
+#include "Vistor/Lu12i_Ori_Lu32i_Vistor.hpp"
+#include "Vistor/Lu12i_Ori_Vistor.hpp"
 #include "AOTFileWriter/AOTFilerWriter.hpp"
 #include <cstdio>
 #include <cassert>
@@ -62,7 +63,8 @@ void test_write_to_file(const char* opened_file, const char* write_file)
     RemoveNonVistor remove_none;
     TB_AddRels_Vistor add_rels_vistor;
     FixBranchVistor fix_b;
-    PeepHoleOPTVistor peep_hole_opt;
+    Lu12i_Ori_Lu32i_Vistor first_opt;
+    Lu12i_Ori_Vistor second_opt;
 
     FILE* file = std::fopen(opened_file, "r+");
     FILE* writefile = std::fopen(write_file, "w+");
@@ -76,7 +78,8 @@ void test_write_to_file(const char* opened_file, const char* write_file)
 
         dis_print.start(*seg_ptr);
 
-        peep_hole_opt.start(*seg_ptr);
+        first_opt.start(*seg_ptr);
+        second_opt.start(*seg_ptr);
         fix_b.start(*seg_ptr);
         std::cout<<"========================================\n";
         dis_print.start(*seg_ptr);
@@ -97,7 +100,7 @@ void test_read_from_file(const char* opened_file)
     DisassmbleVistor dis;
     TB_AddRels_Vistor add_rels_vistor;
     DisassmblePrinterVistor dis_print;
-    PeepHoleOPTVistor peep_hole_opt;
+    Lu12i_Ori_Vistor peep_hole_opt;
 
     FILE* file = std::fopen(opened_file, "r+");
     AOT_File aot_file(file);

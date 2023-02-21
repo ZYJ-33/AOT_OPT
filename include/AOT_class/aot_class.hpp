@@ -36,7 +36,8 @@ class TB
         std::vector<BranchInsnAndOffset> b_insns;
         std::vector<BranchInsnAndOffset> bne_insns;
         std::vector<BranchInsnAndOffset> other_b_insns;
-
+        
+        bool in_scope_of_rel(u_int32_t start, u_int32_t count);
         ListNode<LoongArchInsInfo>* delete_ith_insn(ListNode<LoongArchInsInfo>* node, u_int64_t i);
         ListNode<LoongArchInsInfo>* delete_ith_insn_alongwith_rel(ListNode<LoongArchInsInfo>* node, u_int64_t i);
         ListNode<LoongArchInsInfo>* delete_ith_rel(u_int64_t i);
