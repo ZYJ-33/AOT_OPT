@@ -9,6 +9,7 @@
 #include "Vistor/Lu12i_Ori_Lu32i_Vistor.hpp"
 #include "Vistor/Lu12i_Ori_Vistor.hpp"
 #include "Vistor/St_Addi_Vistor.hpp"
+#include "Vistor/Ld_Addi_Vistor.hpp"
 #include "AOTFileWriter/AOTFilerWriter.hpp"
 #include <cstdio>
 #include <cassert>
@@ -67,6 +68,7 @@ void test_write_to_file(const char* opened_file, const char* write_file)
     Lu12i_Ori_Lu32i_Vistor first_opt;
     Lu12i_Ori_Vistor second_opt;
     St_Addi_Vistor thrid_opt;
+    Ld_Addi_Vistor fouth_opt;
 
     FILE* file = std::fopen(opened_file, "r+");
     FILE* writefile = std::fopen(write_file, "w+");
@@ -79,10 +81,10 @@ void test_write_to_file(const char* opened_file, const char* write_file)
         dis.start(*seg_ptr);    
 
         dis_print.start(*seg_ptr);
-
         //first_opt.start(*seg_ptr);
         //second_opt.start(*seg_ptr);
-        thrid_opt.start(*seg_ptr);
+        //thrid_opt.start(*seg_ptr);
+        fouth_opt.start(*seg_ptr);
         fix_b.start(*seg_ptr);
         std::cout<<"========================================\n";
         dis_print.start(*seg_ptr);
