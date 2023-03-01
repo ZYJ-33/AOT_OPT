@@ -76,7 +76,7 @@ void test_write_to_file(const char* opened_file, const char* write_file)
     AOT_File aot_file(file);
     for(auto seg_ptr: aot_file.get_segments())
     {
-        seg_ptr->settle_all_tb(aot_file.get_rels());
+        seg_ptr->settle_all_tb();
         add_rels_vistor.start(*seg_ptr, &aot_file.get_rels());
         dis.start(*seg_ptr);    
 
@@ -84,7 +84,8 @@ void test_write_to_file(const char* opened_file, const char* write_file)
         //first_opt.start(*seg_ptr);
         //second_opt.start(*seg_ptr);
         //thrid_opt.start(*seg_ptr);
-        fouth_opt.start(*seg_ptr);
+        //fouth_opt.start(*seg_ptr);
+        rm_tail.start(*seg_ptr);
         fix_b.start(*seg_ptr);
         std::cout<<"========================================\n";
         dis_print.start(*seg_ptr);
@@ -111,7 +112,7 @@ void test_read_from_file(const char* opened_file)
     AOT_File aot_file(file);
     for(auto seg_ptr: aot_file.get_segments())
     {
-        seg_ptr->settle_all_tb(aot_file.get_rels());
+        seg_ptr->settle_all_tb();
         add_rels_vistor.start(*seg_ptr, &aot_file.get_rels());
         dis.start(*seg_ptr);    
         

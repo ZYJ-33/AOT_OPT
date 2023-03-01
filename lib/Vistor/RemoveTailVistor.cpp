@@ -19,25 +19,6 @@ void RemoveTailVistor::remove_tail_of(TB& tb, uint which)
 
     ListNode<LoongArchInsInfo>* insn = tb.dis_insns.get(branch_insn_index);
     assert(insn->data->opc == OPC_B);
-    
-    const AOT_rel* closest = nullptr;
-    for(int i=0; i<=tb.rels.size(); i++)
-    {
-    	if(tb.rels_valid[i])
-    	{
-            const AOT_rel& rel = tb.rels[i];
-		    if(rel.kind == LOAD_CALL_TARGET && rel.tc_offset > branch_insn_index*4)
-		    {
-		        if(closest == nullptr)
-		                closest = &rel;
-		        else
-		        {
-		            if(closest->tc_offset > rel.tc_offset)
-		                closest = &rel;
-		        }
-		    }
-	    }
-    }
 
     int32_t i = branch_insn_index;
     if(( which ? tb.true_branch : tb.false_branch) != nullptr)
@@ -47,22 +28,8 @@ void RemoveTailVistor::remove_tail_of(TB& tb, uint which)
 
         while(remain > 0)
         {
-            if(i == closest->tc_offset/4)
-            {
-                u_int32_t amount = closest->rel_slots_num;
-                i += amount;
-                remain -= amount;
-                while(amount > 0)
-                {
-                        go = go->next;
-                        amount -= 1;
-                }
-            }
-            else
-            {
-                go = tb.delete_ith_insn_alongwith_rel(go, i);
-                remain -= 1;
-            }
+            go = tb.delete_ith_insn_alongwith_rel(go, i);
+            remain -= 1;
         }
     }
     else

@@ -65,11 +65,9 @@ class Segment
         std::vector<std::shared_ptr<TB>> _tbs;
         const AOT_Segment* seg;
         Segment(FILE* f, const AOT_Segment* seg);
-        void get_addr(u_int64_t* res, int which, const TB& tb, const std::vector<AOT_rel>& rels);
-        void settle_all_tb(const std::vector<AOT_rel>& rels);
-        void TB_Link(std::shared_ptr<TB> tb, bool is_true_branch, const std::vector<AOT_rel>& rels);
+        void settle_all_tb();
+        void TB_Link(std::shared_ptr<TB> tb, bool is_true_branch);
         u_int32_t how_many_bytes();
-
         u_int32_t how_many_tbs();
         u_int32_t how_many_rel();
         u_int32_t how_many_code();

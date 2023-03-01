@@ -11,8 +11,12 @@ void TBWriter::handle_rels(std::shared_ptr<TB> tb_ptr, AOT_rel* rel_buf, AOT_TB*
     for(auto valid: tb_ptr->rels_valid)
         any_valid |= valid;
     if(!any_valid)
+    {
+        target_tb->rel_start_index = 1;
+        target_tb->rel_end_index = 0;
         return;
-    
+    }
+
     target_tb->rel_start_index = rel_cur_index;
     for(u_int32_t i=0; i<tb_ptr->rels.size(); i++)
     {

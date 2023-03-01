@@ -27,6 +27,7 @@ typedef struct AOT_TB
     u_int32_t flags;
     u_int16_t jmp_reset_offsets[2];
     uintptr_t jmp_target_arg[2];
+    u_int32_t x86_offset[2];
     int32_t rel_start_index;
     int32_t rel_end_index;
     

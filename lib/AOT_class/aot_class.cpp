@@ -351,32 +351,9 @@ u_int32_t Segment::how_many_code()
     return total;
 }
 
-void Segment::get_addr(u_int64_t* res, int which, const TB& tb, const std::vector<AOT_rel>& rels)
+void Segment::TB_Link(std::shared_ptr<TB> tb, bool is_true_branch)
 {
-    u_int64_t branch_insn_offset = (tb.origin_aot_tb)->jmp_target_arg[which];
-    u_int32_t* branch_insn_ptr = (u_int32_t*)(tb.code+branch_insn_offset);
-
-    const AOT_rel& rel = tb.find_closest_load_target_addr_rel_entry(branch_insn_offset, rels);
-    if(rel.kind == LOAD_CALL_TARGET)
-        *res = rel.extra_addend + (seg->info).seg_begin;
-
-    /*
-    for(int i=tb.origin_aot_tb->rel_start_index; i<=tb.origin_aot_tb->rel_end_index; i++)
-    {
-        const AOT_rel& rel = rels[i];
-        if(rel.kind == LOAD_CALL_TARGET
-            && rel.tc_offset == branch_insn_offset + 20)
-         //   && ((*branch_insn_ptr) & 0x1f) == 21)
-         {
-                *res = rel.extra_addend + (seg->info).seg_begin;
-                return;
-         }
-    }
-    */
-}
-
-void Segment::TB_Link(std::shared_ptr<TB> tb, bool is_true_branch, const std::vector<AOT_rel>& rels)
-{
+   /*
    u_int64_t x86_addr = -1;
    get_addr(&x86_addr, is_true_branch? 1:0, *tb, rels);
    if (x86_addr == -1)
@@ -392,17 +369,15 @@ void Segment::TB_Link(std::shared_ptr<TB> tb, bool is_true_branch, const std::ve
             exit(1);
         }
    }
+   */
+
+   u_int64_t x86_addr = tb->origin_aot_tb->x86_offset[is_true_branch? 1:0] + seg->info.seg_begin;
    std::shared_ptr<TB> next_tb = x86AddrToTb[x86_addr];
-   if(next_tb == nullptr)
-   {
-        std::cerr<<"warning： can't find tb relate to x86_addr: "<<std::hex<<x86_addr<<std::endl;
-       // exit(1);
-   }
-   else
+   if(next_tb != nullptr)
         SetNextTB(tb, next_tb, is_true_branch);
 }
 
-void Segment::settle_all_tb(const std::vector<AOT_rel>& rels)
+void Segment::settle_all_tb()
 {
     for(auto tb: _tbs)
     {
@@ -414,13 +389,13 @@ void Segment::settle_all_tb(const std::vector<AOT_rel>& rels)
         if(origin_tb.jmp_reset_offsets[true_branch] != TB_JMP_RESET_OFFSET_INVALID 
            && origin_tb.jmp_reset_offsets[false_branch] != TB_JMP_RESET_OFFSET_INVALID)
         {
-            TB_Link(tb, true, rels);
-            TB_Link(tb, false, rels);
+            TB_Link(tb, true);
+            TB_Link(tb, false);
         }
         else if(origin_tb.jmp_reset_offsets[true_branch] != TB_JMP_RESET_OFFSET_INVALID)
-            TB_Link(tb, true, rels);
+            TB_Link(tb, true);
         else if(origin_tb.jmp_reset_offsets[false_branch] != TB_JMP_RESET_OFFSET_INVALID)
-            TB_Link(tb, false, rels);
+            TB_Link(tb, false);
         else
                 std::cerr<<"TB with pc: "<<origin_tb.offset_in_segment + seg_begin << "did not have outgoing branch"<<std::endl;
         
