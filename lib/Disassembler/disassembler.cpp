@@ -17807,7 +17807,7 @@ gen_and_require->require_set[gen_and_require->gr_count++] = insn->srcs_regs[0];
     uint32_t encode(LoongArchInsInfo* info)
     {
         if(info->opc == OPC_INVALID)
-                return 0;
+                return info->origin_binary;
         uint32_t insn = opc2bin[info->opc];
         uint format = insn2format[info->opc];
         encodefuncs[format](info, &insn);
