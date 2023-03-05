@@ -35,6 +35,80 @@ bool TB::in_scope_of_rel(u_int32_t start, u_int32_t count)
     return false;
 }
 
+void __add_b_insn(TB& tb, LoongArchInsInfo* node, u_int32_t index)
+{
+    if(node->opc == OPC_B)
+            tb.b_insns.emplace_back(node, index);
+    else if(node->opc == OPC_BNE)
+            tb.bne_insns.emplace_back(node, index);
+    else if(node->opc == OPC_BEQZ || node->opc == OPC_BNEZ || node->opc == OPC_BCEQZ || node->opc == OPC_BCNEZ
+            || node->opc == OPC_JIRL || node->opc == OPC_BL || node->opc == OPC_BEQ || node->opc == OPC_BLT
+            || node->opc == OPC_BGE || node->opc == OPC_BLTU || node->opc == OPC_BGEU)
+            tb.other_b_insns.emplace_back(node, index);
+}
+
+void __adjust_index_of_branchs_add(std::vector<BranchInsnAndOffset>& branch_and_offs, u_int32_t i)
+{
+    for(auto& branch_and_off : branch_and_offs)
+    {
+        if(branch_and_off.offset > i)
+                branch_and_off.offset += 1;
+    }
+}
+
+void adjust_index_of_branchs_when_add_insn(TB& tb, u_int32_t i)
+{
+    __adjust_index_of_branchs_add(tb.b_insns, i);
+    __adjust_index_of_branchs_add(tb.bne_insns, i);
+    __adjust_index_of_branchs_add(tb.other_b_insns, i);
+}
+
+ListNode<LoongArchInsInfo>* TB::add_insn(ListNode<LoongArchInsInfo>* prev, ListNode<LoongArchInsInfo>* inserted, u_int32_t index)
+{
+    u_int32_t inserted_index = index + 1;
+    u_int64_t inserted_offset = inserted_index << 2;
+    u_int64_t j = 0;
+
+    for(auto& rel: rels)
+    {
+        if(rels_valid[j] && (rel.tc_offset <= inserted_offset && inserted_offset < rel.tc_offset + (rel.rel_slots_num<<2)))
+        {
+            std::cerr<<"try to add an insn to middle of rel"<<std::endl;
+            exit(1);
+        }
+        j += 1;
+    }
+
+    adjust_index_of_branchs_when_add_insn(*this, inserted_index);
+    __add_b_insn(*this, inserted->data, inserted_index);
+
+    j = 0;
+    for(auto& rel: rels)
+    {
+        if(rels_valid[j] && rel.tc_offset >= inserted_offset)
+                rel.tc_offset += 4;
+        j += 1;
+    }
+    
+    for(int i=0; i<2; i++)
+    {
+        if(origin_aot_tb->jmp_reset_offsets[i] != TB_JMP_RESET_OFFSET_INVALID)
+        {
+            if(origin_aot_tb->jmp_target_arg[i] >= inserted_offset)
+                    origin_aot_tb->jmp_target_arg[i] += 4;
+        }
+    }
+
+    return dis_insns.insert_after(prev, inserted);
+}
+
+ListNode<LoongArchInsInfo>* TB::add_insn_at_tail(ListNode<LoongArchInsInfo>* inserted, u_int32_t index)
+{
+    return add_insn(dis_insns.end()->prev, inserted, index);
+}
+
+
+
 TB::TB(FILE* f, AOT_TB* aot_tb, u_int32_t SegBegin):origin_aot_tb(aot_tb)
 {
     has_invalid_insn = false;
@@ -220,6 +294,46 @@ ListNode<LoongArchInsInfo>* TB::delete_ith_rel(u_int64_t i)
         return nullptr;
 }
 
+void __erase_b_and_index(std::vector<BranchInsnAndOffset>& b_and_index, u_int32_t removed_index)
+{
+    for(auto iter = b_and_index.begin(); iter != b_and_index.end(); iter++)
+    {
+        if(iter->offset == removed_index)
+        {
+            b_and_index.erase(iter);
+            break;
+        }
+    }
+}
+
+void __delete_b_insn(TB& tb, LoongArchInsInfo* node, u_int32_t i)
+{
+        if(node->opc == OPC_B)
+            __erase_b_and_index(tb.b_insns, i);    
+        else if(node->opc == OPC_BNE)
+            __erase_b_and_index(tb.bne_insns, i);
+        else if(node->opc == OPC_BEQZ || node->opc == OPC_BNEZ || node->opc == OPC_BCEQZ || node->opc == OPC_BCNEZ
+            || node->opc == OPC_JIRL || node->opc == OPC_BL || node->opc == OPC_BEQ || node->opc == OPC_BLT
+            || node->opc == OPC_BGE || node->opc == OPC_BLTU || node->opc == OPC_BGEU)
+            __erase_b_and_index(tb.other_b_insns, i);
+}
+
+void __adjust_index_of_branchs(std::vector<BranchInsnAndOffset>& branch_and_offs, u_int32_t i)
+{
+    for(auto& branch_and_off : branch_and_offs)
+    {
+        if(branch_and_off.offset > i)
+                branch_and_off.offset -= 1;
+    }
+}
+
+void adjust_index_of_branchs_when_delete_insn(TB& tb, u_int32_t i)
+{
+      __adjust_index_of_branchs(tb.b_insns, i);
+      __adjust_index_of_branchs(tb.bne_insns, i);
+      __adjust_index_of_branchs(tb.other_b_insns, i);
+}
+
 ListNode<LoongArchInsInfo>* TB::delete_ith_insn_alongwith_rel(ListNode<LoongArchInsInfo>* node, u_int64_t i)
 {
     u_int64_t offset_of_ith_insn = i << 2;
@@ -234,6 +348,8 @@ ListNode<LoongArchInsInfo>* TB::delete_ith_insn_alongwith_rel(ListNode<LoongArch
          }
          j += 1;
     }
+    __delete_b_insn(*this, node->data, i);
+    adjust_index_of_branchs_when_delete_insn(*this, i);
 
     j = 0;
     for(auto& rel: rels)
@@ -254,6 +370,7 @@ ListNode<LoongArchInsInfo>* TB::delete_ith_insn_alongwith_rel(ListNode<LoongArch
     return dis_insns.remove(node);
 }
 
+
 ListNode<LoongArchInsInfo>* TB::delete_ith_insn(ListNode<LoongArchInsInfo>* node, u_int64_t i)
 {
     u_int64_t offset_of_ith_insn = i << 2;
@@ -268,6 +385,8 @@ ListNode<LoongArchInsInfo>* TB::delete_ith_insn(ListNode<LoongArchInsInfo>* node
          }
          j += 1;
     }
+    __delete_b_insn(*this, node->data, i);
+    adjust_index_of_branchs_when_delete_insn(*this, i);
 
     j = 0;
     for(auto& rel: rels)
@@ -276,6 +395,7 @@ ListNode<LoongArchInsInfo>* TB::delete_ith_insn(ListNode<LoongArchInsInfo>* node
                 rel.tc_offset -= 4;
         j += 1;
     }
+
     for(int i=0; i<2; i++)
     {
         if(origin_aot_tb->jmp_reset_offsets[i] != TB_JMP_RESET_OFFSET_INVALID)

@@ -10,6 +10,24 @@ bool can_substitue_with_addi_insn(int64_t imm)
         return -2048 <= imm && imm <= 2047;
 }
 
+void check_and_add_branch_insn(TB& tb, LoongArchInsInfo* res, u_int32_t i)
+{
+	if(res->opc == OPC_B)
+    {
+        tb.b_insns.emplace_back(res, i);
+    }
+    else if(res->opc == OPC_BNE)
+    {
+        tb.bne_insns.emplace_back(res, i);
+    }
+    else if(res->opc == OPC_BEQZ || res->opc == OPC_BNEZ || res->opc == OPC_BCEQZ || res->opc == OPC_BCNEZ
+            || res->opc == OPC_JIRL || res->opc == OPC_BL || res->opc == OPC_BEQ || res->opc == OPC_BLT
+            || res->opc == OPC_BGE || res->opc == OPC_BLTU || res->opc == OPC_BGEU)
+    {
+        tb.other_b_insns.emplace_back(res, i);
+    }
+}
+
 
 ListNode<LoongArchInsInfo>* substitue_with_addi_insn(ListNode<LoongArchInsInfo>* node, u_int8_t insn_count, u_int8_t src_reg, int imm, TB& tb, u_int32_t* cur_index)
 {
@@ -95,4 +113,11 @@ void print_all_insn(LinkList<LoongArchInsInfo>& insns)
         print_one_insn(*(iter->data));
         iter = iter->next;
     }
+}
+
+u_int32_t branch_insn_index(std::shared_ptr<TB> tb, bool is_true_branch)
+{
+    u_int32_t index = is_true_branch? 1:0;
+    assert(tb->origin_aot_tb->jmp_reset_offsets[index] != TB_JMP_RESET_OFFSET_INVALID);
+    return tb->origin_aot_tb->jmp_target_arg[index]/4;
 }

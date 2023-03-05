@@ -92,6 +92,13 @@ class LinkList
                     tail.insert_at_prev(node);
             }
 
+            ListNode<subclass>* insert_after(ListNode<subclass>* node, ListNode<subclass>* inserted)
+            {
+                size += 1;
+                node->insert_at_next(inserted);
+                return inserted;
+            }
+
             ListNode<subclass>* begin()
             {
                 return head.next;

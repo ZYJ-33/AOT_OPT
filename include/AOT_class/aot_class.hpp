@@ -40,6 +40,8 @@ class TB
         bool in_scope_of_rel(u_int32_t start, u_int32_t count);
         ListNode<LoongArchInsInfo>* delete_ith_insn(ListNode<LoongArchInsInfo>* node, u_int64_t i);
         ListNode<LoongArchInsInfo>* delete_ith_insn_alongwith_rel(ListNode<LoongArchInsInfo>* node, u_int64_t i);
+        ListNode<LoongArchInsInfo>* add_insn(ListNode<LoongArchInsInfo>* prev, ListNode<LoongArchInsInfo>* inserted, u_int32_t index);
+        ListNode<LoongArchInsInfo>* add_insn_at_tail(ListNode<LoongArchInsInfo>* inserted, u_int32_t index);
         ListNode<LoongArchInsInfo>* delete_ith_rel(u_int64_t i);
         
         AOT_TB* origin_aot_tb;

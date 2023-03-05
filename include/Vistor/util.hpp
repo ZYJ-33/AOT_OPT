@@ -14,4 +14,6 @@ bool is_reg_killed(LoongArchInsInfo* insn, u_int8_t reg);
 bool can_substitue_with_addi_insn(int64_t imm);
 ListNode<LoongArchInsInfo>* substitue_with_addi_insn(ListNode<LoongArchInsInfo>* node, u_int8_t insn_count, u_int8_t src_reg, int imm, TB& tb, u_int32_t* cur_index);
 bool can_substitue_with_addi_insn(int64_t imm);
+void check_and_add_branch_insn(TB& tb, LoongArchInsInfo* res, u_int32_t i);
+u_int32_t branch_insn_index(std::shared_ptr<TB> tb, bool is_true_branch);
 #endif

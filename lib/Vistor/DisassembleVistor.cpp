@@ -1,5 +1,7 @@
 #include "Vistor/DisassembleVistor.hpp"
 #include <cstring>
+#include "Vistor/util.hpp"
+
 void DisassmbleVistor::visit(TB& tb)
 {
     u_int32_t* insn_ptr = (u_int32_t*)tb.code;
@@ -18,14 +20,7 @@ void DisassmbleVistor::visit(TB& tb)
             tb.has_invalid_insn = true;
         }
 
-        if(res->opc == OPC_B)
-            tb.b_insns.emplace_back(res, i);
-        else if(res->opc == OPC_BNE)
-            tb.bne_insns.emplace_back(res, i);
-        else if(res->opc == OPC_BEQZ || res->opc == OPC_BNEZ || res->opc == OPC_BCEQZ || res->opc == OPC_BCNEZ
-                || res->opc == OPC_JIRL || res->opc == OPC_BL || res->opc == OPC_BEQ || res->opc == OPC_BLT
-                || res->opc == OPC_BGE || res->opc == OPC_BLTU || res->opc == OPC_BGEU)
-            tb.other_b_insns.emplace_back(res, i);
+        check_and_add_branch_insn(tb, res, i);
 
         res->origin_binary = insn;
         tb.dis_insns.insert_at_tail(res);
