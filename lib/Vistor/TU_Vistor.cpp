@@ -15,9 +15,11 @@ void get_all_entrys_block(Segment& seg, std::vector<std::shared_ptr<TB>>& result
 bool only_one_successor(std::shared_ptr<TB> tb)
 {
     return (tb->origin_aot_tb->jmp_reset_offsets[0] == TB_JMP_RESET_OFFSET_INVALID
-           && tb->origin_aot_tb->jmp_reset_offsets[1] != TB_JMP_RESET_OFFSET_INVALID)
+           && tb->origin_aot_tb->jmp_reset_offsets[1] != TB_JMP_RESET_OFFSET_INVALID
+           && tb->true_branch != nullptr)
            ||(tb->origin_aot_tb->jmp_reset_offsets[0] != TB_JMP_RESET_OFFSET_INVALID
-           && tb->origin_aot_tb->jmp_reset_offsets[1] == TB_JMP_RESET_OFFSET_INVALID);
+           && tb->origin_aot_tb->jmp_reset_offsets[1] == TB_JMP_RESET_OFFSET_INVALID
+           && tb->false_branch != nullptr);
 }
 
 bool no_successor(std::shared_ptr<TB> tb)
