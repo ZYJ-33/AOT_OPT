@@ -1,3 +1,4 @@
+add_subdirectory(TU_AOTFileWriter)
 add_subdirectory(Basic)
 add_subdirectory(Disassembler)
 add_subdirectory(Vistor)

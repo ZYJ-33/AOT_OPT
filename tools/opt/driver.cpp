@@ -11,7 +11,9 @@
 #include "Vistor/St_Addi_Vistor.hpp"
 #include "Vistor/Ld_Addi_Vistor.hpp"
 #include "Vistor/TU_Vistor.hpp"
+#include "Vistor/CheckVistor.hpp"
 #include "AOTFileWriter/AOTFilerWriter.hpp"
+#include "TU_AOTFileWriter/TU_AOTFilerWriter.hpp"
 #include <cstdio>
 #include <cassert>
 #include <sys/stat.h>
@@ -70,34 +72,24 @@ void test_write_to_file(const char* opened_file, const char* write_file)
     Lu12i_Ori_Vistor second_opt;
     St_Addi_Vistor thrid_opt;
     Ld_Addi_Vistor fouth_opt;
-    TU_Vistor tu;
 
     FILE* file = std::fopen(opened_file, "r+");
     FILE* writefile = std::fopen(write_file, "w+");
 
     AOT_File aot_file(file);
     for(auto seg_ptr: aot_file.get_segments())
-    {
         seg_ptr->settle_all_tb();
+
+    for(auto seg_ptr: aot_file.get_segments())
+    {
         add_rels_vistor.start(*seg_ptr, &aot_file.get_rels());
         dis.start(*seg_ptr);    
-
-        dis_print.start(*seg_ptr);
-        std::cout<<"========================================\n";
-        //first_opt.start(*seg_ptr);
-        //second_opt.start(*seg_ptr);
-        //thrid_opt.start(*seg_ptr);
-        //fouth_opt.start(*seg_ptr);
-        //rm_tail.start(*seg_ptr);
-        tu.start(*seg_ptr);
-        fix_b.start(*seg_ptr);
-        std::cout<<"========================================\n";
         dis_print.start(*seg_ptr);
     }
 
     u_int32_t file_sz = aot_file.how_many_bytes();
     char* buf = new char[file_sz];
-    AOTFileWriter::write_to_buf(buf, aot_file);
+    TU_AOTFileWriter::write_to_buf(buf, aot_file);
     fwrite(buf, file_sz, 1, writefile);
 
     fclose(file);
@@ -111,6 +103,7 @@ void test_read_from_file(const char* opened_file)
     TB_AddRels_Vistor add_rels_vistor;
     DisassmblePrinterVistor dis_print;
     Lu12i_Ori_Vistor peep_hole_opt;
+    CheckVistor check;
 
     FILE* file = std::fopen(opened_file, "r+");
     AOT_File aot_file(file);
@@ -119,8 +112,8 @@ void test_read_from_file(const char* opened_file)
         seg_ptr->settle_all_tb();
         add_rels_vistor.start(*seg_ptr, &aot_file.get_rels());
         dis.start(*seg_ptr);    
-        
         dis_print.start(*seg_ptr);
+        check.start(*seg_ptr);
     }
 }
 
@@ -128,6 +121,5 @@ int main(int argc, char** argv)
 {
     const char* opened_file = "./hello_static.aot";
     const char* write_file = "./write.aot";
-
     test_write_to_file(opened_file, write_file);
 }

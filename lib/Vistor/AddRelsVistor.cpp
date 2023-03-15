@@ -2,8 +2,10 @@
 
 void TB_AddRels_Vistor::visit(TB& tb)
 {
-    u_int64_t start_index = tb.origin_aot_tb->rel_start_index; 
-    u_int64_t end_index = tb.origin_aot_tb->rel_end_index;
+    int32_t start_index = tb.origin_aot_tb->rel_start_index; 
+    int32_t end_index = tb.origin_aot_tb->rel_end_index;
+    if(end_index < start_index)
+        return;
     tb.rels.reserve(end_index - start_index + 1);
     tb.rels_valid.reserve(end_index - start_index + 1);
     while(start_index <= end_index)

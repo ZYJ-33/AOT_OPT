@@ -1,6 +1,7 @@
 #include "Vistor/DisassembleVistor.hpp"
 #include <cstring>
 #include "Vistor/util.hpp"
+#include "Basic/aot.hpp"
 
 void DisassmbleVistor::visit(TB& tb)
 {
@@ -16,12 +17,10 @@ void DisassmbleVistor::visit(TB& tb)
         insn = *insn_ptr;
         if(!decode(res, insn))
         {
-            std::cerr<<"disassmble insn 0x" << std::hex << insn <<" failed"<<std::endl;
+           // std::cerr<<"disassmble insn 0x" << std::hex << insn <<" failed"<<std::endl;
             tb.has_invalid_insn = true;
         }
-
         check_and_add_branch_insn(tb, res, i);
-
         res->origin_binary = insn;
         tb.dis_insns.insert_at_tail(res);
         insn_ptr += 1;
@@ -37,7 +36,7 @@ void DisassmbleVistor::toinsns(u_int32_t* bin_insns, u_int32_t size, std::vector
         memset(res, 0,  sizeof(LoongArchInsInfo));
         if(!decode(res, *bin_insns))
         {
-            std::cerr<<"disassmble insn 0x" << std::hex << *bin_insns <<" failed"<<std::endl;
+            //std::cerr<<"disassmble insn 0x" << std::hex << *bin_insns <<" failed"<<std::endl;
             res->opc = OPC_INVALID;
         }
         insns.push_back(res);

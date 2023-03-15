@@ -60,9 +60,19 @@ void DisassmblePrinterVistor::print_one_insn(LoongArchInsInfo& insn)
 void DisassmblePrinterVistor::visit(TB& tb)
 {
    std::cout<<"print disassmble at x86_pc: 0x"<<std::hex<<tb.x86_addr<<std::endl;
+   std::cout<<"next_addr is : "<<std::hex<<this->seg_start + tb.origin_aot_tb->x86_offset[0] <<std::endl;
+   std::cout<<"target_addr is : "<<std::hex<<this->seg_start + tb.origin_aot_tb->x86_offset[1] <<std::endl;
+   if(tb.true_branch_offset != TB_JMP_RESET_OFFSET_INVALID)
+        std::cout<<"true_branch_offset: "<<tb.true_branch_offset<<std::endl;
+   else
+        std::cout<<"true_branch not exist\n";
+   if(tb.false_branch_offset != TB_JMP_RESET_OFFSET_INVALID)
+        std::cout<<"false_branch_offset: "<<tb.false_branch_offset<<std::endl;
+   else
+        std::cout<<"false_branch not exist\n";
+
    u_int32_t rel_cur = 0;
    u_int64_t i = 0;
-  
    while(rel_cur < tb.rels_valid.size() && tb.rels_valid[rel_cur] == false)
            rel_cur++;
 
@@ -85,33 +95,25 @@ void DisassmblePrinterVistor::visit(TB& tb)
             while(rel_cur < tb.rels_valid.size() && tb.rels_valid[rel_cur] == false)
                 rel_cur++;
         }
-        else if(tb.origin_aot_tb->jmp_reset_offsets[0] != TB_JMP_RESET_OFFSET_INVALID 
-               && i == (tb.origin_aot_tb->jmp_target_arg[0] / 4))
+        else if(tb.true_branch_offset != TB_JMP_RESET_OFFSET_INVALID && i == tb.true_branch_offset)
         {
-            std::cout<<"false_branch"<<std::endl;
-            std::cout<<"{"<<std::endl;
-            if(tb.false_branch != nullptr)
-                std::cout<<std::hex<<tb.false_branch->x86_addr<<" extra_addend:"<<std::dec<<tb.false_branch->x86_addr - this->seg_start<<std::endl;
-            else
-                std::cout<<"next tb not exist yet"<<std::endl;
-            print_one_insn(*iter->data); 
-            i += 1;
+            std::cout<<"true_branch:\n";
+            std::cout<<"target addr: 0x" <<std::hex<<seg_start + tb.origin_aot_tb->x86_offset[1]<<std::endl;
+            std::cout<<"{\n";
+            print_one_insn(*(iter->data));
+            std::cout<<"}\n";
             iter = iter->next;
-            std::cout<<"}"<<std::endl;
+            i += 1;
         }
-        else if(tb.origin_aot_tb->jmp_reset_offsets[1] != TB_JMP_RESET_OFFSET_INVALID
-               && i == (tb.origin_aot_tb->jmp_target_arg[1] / 4))
+        else if(tb.false_branch_offset != TB_JMP_RESET_OFFSET_INVALID && i == tb.false_branch_offset)
         {
-            std::cout<<"true_branch"<<std::endl;
-            std::cout<<"{"<<std::endl;
-            if(tb.true_branch != nullptr)
-                std::cout<<std::hex<<tb.true_branch->x86_addr<<" extra_addend:"<<std::dec<<tb.true_branch->x86_addr - this->seg_start<<std::endl;
-            else
-                std::cout<<"next tb not exist yet"<<std::endl;
-            print_one_insn(*iter->data); 
-            i += 1;
+            std::cout<<"false_branch:\n";
+            std::cout<<"target addr: 0x" <<std::hex<<seg_start + tb.origin_aot_tb->x86_offset[0]<<std::endl;
+            std::cout<<"{\n";
+            print_one_insn(*(iter->data));
+            std::cout<<"}\n";
             iter = iter->next;
-            std::cout<<"}"<<std::endl;
+            i += 1;
         }
         else
         {

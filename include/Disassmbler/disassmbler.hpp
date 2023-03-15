@@ -1278,26 +1278,26 @@ typedef struct{
     u_int8_t srcs_fregs[3]; // fj fk fa
 
 
-    u_int16_t csr; //csr 
+    int16_t csr; //csr 
 
-    u_int8_t sa; // sa2 sa3
-    u_int8_t msb; // msbw msbd
-    u_int8_t lsb; // lsbw lsbd
+    int32_t sa; // sa2 sa3
+    int32_t msb; // msbw msbd
+    int32_t lsb; // lsbw lsbd
     
-    u_int16_t code; //code
-    u_int8_t code_2; //code_2
+    int32_t code; //code
+    int32_t code_2; //code_2
 
-    u_int16_t level; //level
-    u_int16_t level_3; //level_3
-    u_int8_t seq; //seq
+    int32_t level; //level
+    int32_t level_3; //level_3
+    int32_t seq; //seq
 
-    u_int8_t fcond; //fcond
+    int32_t fcond; //fcond
 
-    u_int16_t hint; //hint hint_4 hint5 
+    int32_t hint; //hint hint_4 hint5 
 
-    u_int8_t op; // op bt_op
-    u_int8_t ptr; // ptr
-    u_int8_t cond; // cond_1 cond_2
+    int32_t op; // op bt_op
+    int32_t ptr; // ptr
+    int32_t cond; // cond_1 cond_2
 
     u_int16_t ui; //ui5 ui6 ui3 ui4 ui8 ui12 uimm
     u_int16_t _ui; //imm2

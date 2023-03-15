@@ -6,6 +6,20 @@
 #define TB_JMP_RESET_OFFSET_INVALID 0xffff
 #define uintptr_t u_int64_t
 
+enum TBtype
+{
+    UNKNOW_TB_TYPE,
+    NORMAL_BNE_TYPE,
+    NORMAL_B_FALSE_TYPE,
+    NORMAL_B_TRUE_TYPE,
+    TU_BNE_TYPE,
+    TU_BEQ_TYPE,
+    TU_B_FALSE_TYPE,
+    TU_B_TRUE_TYPE,
+    NONE_B_TYPE,
+};
+
+
 typedef u_int64_t target_ulong;
 typedef struct AOT_Header
 {
@@ -27,6 +41,7 @@ typedef struct AOT_TB
     u_int32_t flags;
     u_int16_t jmp_reset_offsets[2];
     uintptr_t jmp_target_arg[2];
+    u_int16_t tu_jmp[2];
     u_int32_t x86_offset[2];
     int32_t rel_start_index;
     int32_t rel_end_index;
