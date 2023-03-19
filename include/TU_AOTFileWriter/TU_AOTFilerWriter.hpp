@@ -5,6 +5,6 @@
 class TU_AOTFileWriter
 {
     public:
-           static void write_to_buf(char* buf, AOT_File& file);
+           static u_int64_t write_to_buf(char* buf, AOT_File& file);
 };
 #endif

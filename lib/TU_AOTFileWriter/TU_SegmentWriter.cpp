@@ -3,7 +3,7 @@
 #include <climits>
 #include <cstring>
 
-void TU_SegmentsWriter::write_to_buf(char* buf, std::vector<Segment*>& segs, AOT_Header* hdr)
+u_int64_t TU_SegmentsWriter::write_to_buf(char* buf, std::vector<Segment*>& segs, AOT_Header* hdr)
 {
       u_int32_t seg_count = segs.size();
             
@@ -46,6 +46,7 @@ void TU_SegmentsWriter::write_to_buf(char* buf, std::vector<Segment*>& segs, AOT
            cur_seg->ismap = seg_ptr->seg->ismap;
            cur_seg->tb_offset = (uintptr_t)tb_table_cur - (uintptr_t)hdr;
            cur_seg->tb_nums = seg_ptr->_tbs.size();
+           
 
            TU_TBWriter::write_to_buf(hdr, cur_seg, tb_table_cur, rel_cur, code_cur, seg_ptr->_tbs);
 
@@ -54,6 +55,7 @@ void TU_SegmentsWriter::write_to_buf(char* buf, std::vector<Segment*>& segs, AOT
            rel_cur += seg_ptr->how_many_rel();
            code_cur += seg_ptr->how_many_code();
       }
+      return (u_int64_t)code_cur;
 
       
 }

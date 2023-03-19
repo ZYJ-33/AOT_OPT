@@ -150,18 +150,36 @@ TB::TB(FILE* f, AOT_TB* aot_tb, u_int32_t SegBegin):origin_aot_tb(aot_tb)
             decode(&tmp, insn); 
             if(tmp.opc == OPC_BEQ || tmp.opc == OPC_BNE)
             {
-                memset(&tmp, 0, sizeof(tmp));
-                decode(&tmp, false_branch_insn); 
-                if(tmp.opc != OPC_B)
-                     find_unknow_tb_type(x86_addr);
                 if(tmp.opc == OPC_BEQ)
                 {
+                     u_int32_t beq_index = aot_tb->tu_jmp[1]/4;
+                     bool seen_fisrt_branch = false;
+                     for(u_int32_t i=beq_index+1; i<code_size/4; i++)
+                     {
+                        insn = ((u_int32_t*)code)[i];
+                        memset(&tmp, 0, sizeof(tmp));
+                        decode(&tmp, insn);
+                        if(tmp.opc == OPC_B)
+                        {
+                            if(!seen_fisrt_branch)
+                            {
+                                true_branch_offset = i;
+                                seen_fisrt_branch = true;
+                            }
+                            else
+                                false_branch_offset = i;
+                        }
+                     }
+                     assert(true_branch_offset != TB_JMP_RESET_OFFSET_INVALID && false_branch_offset != TB_JMP_RESET_OFFSET_INVALID);
                      tbtype = TU_BEQ_TYPE;
-                     true_branch_offset = aot_tb->tu_jmp[1] >> 2;
-                     false_branch_offset = aot_tb->tu_jmp[0] >> 2;
                 }
                 else
                 {
+                     memset(&tmp, 0, sizeof(tmp));
+                     decode(&tmp, false_branch_insn); 
+                     if(tmp.opc != OPC_B)
+                        find_unknow_tb_type(x86_addr);
+
                      tbtype = TU_BNE_TYPE;
                      true_branch_offset = aot_tb->tu_jmp[1] >> 2;
                      false_branch_offset = aot_tb->tu_jmp[0] >> 2;
@@ -611,32 +629,8 @@ void Segment::settle_all_tb()
         u_int64_t true_branch_addr = tb->origin_aot_tb->x86_offset[1] + seg->info.seg_begin;
         u_int64_t false_branch_addr = tb->origin_aot_tb->x86_offset[0] + seg->info.seg_begin;
 
-        if(tb->tbtype == NORMAL_BNE_TYPE || tb->tbtype == NORMAL_B_FALSE_TYPE || tb->tbtype == NORMAL_B_TRUE_TYPE)
-        {
-                if(tb->true_branch_offset != TB_JMP_RESET_OFFSET_INVALID && tb->false_branch_offset != TB_JMP_RESET_OFFSET_INVALID)
-                {
-                    TB_Link(tb, true, true_branch_addr);
-                    TB_Link(tb, false, false_branch_addr);
-                }
-                else if(tb->true_branch_offset != TB_JMP_RESET_OFFSET_INVALID)
-                    TB_Link(tb, true, true_branch_addr);
-                else if(tb->false_branch_offset != TB_JMP_RESET_OFFSET_INVALID)
-                    TB_Link(tb, false, false_branch_addr);
-        }
-        else if(tb->tbtype == TU_BNE_TYPE || tb->tbtype == TU_B_FALSE_TYPE 
-                || tb->tbtype == TU_B_TRUE_TYPE || tb->tbtype == TU_BEQ_TYPE)
-        {
-                TB_Link(tb, true, true_branch_addr);
-                TB_Link(tb, false, false_branch_addr);
-        }
-        else if(tb->tbtype == NONE_B_TYPE)
-                continue;
-        else
-        {
-            std::cerr<<"in settle all tb\n";
-            exit(1);
-        }
-        
+        TB_Link(tb, true, true_branch_addr);
+        TB_Link(tb, false, false_branch_addr);
     }
 }
 

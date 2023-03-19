@@ -7,7 +7,7 @@
 class TU_SegmentsWriter
 {
     public:
-            static void write_to_buf(char* buf, std::vector<Segment*>& seg, AOT_Header* hdr); 
+            static u_int64_t write_to_buf(char* buf, std::vector<Segment*>& seg, AOT_Header* hdr); 
 };
 
 #endif

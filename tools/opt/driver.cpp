@@ -84,13 +84,14 @@ void test_write_to_file(const char* opened_file, const char* write_file)
     {
         add_rels_vistor.start(*seg_ptr, &aot_file.get_rels());
         dis.start(*seg_ptr);    
-        dis_print.start(*seg_ptr);
+       // dis_print.start(*seg_ptr);
     }
 
     u_int32_t file_sz = aot_file.how_many_bytes();
-    char* buf = new char[file_sz];
-    TU_AOTFileWriter::write_to_buf(buf, aot_file);
-    fwrite(buf, file_sz, 1, writefile);
+    char* buf = new char[file_sz+40000];
+    u_int64_t true_size = TU_AOTFileWriter::write_to_buf(buf, aot_file);
+    assert(true_size >= file_sz);
+    fwrite(buf, true_size, 1, writefile);
 
     fclose(file);
     fclose(writefile);
@@ -102,8 +103,6 @@ void test_read_from_file(const char* opened_file)
     DisassmbleVistor dis;
     TB_AddRels_Vistor add_rels_vistor;
     DisassmblePrinterVistor dis_print;
-    Lu12i_Ori_Vistor peep_hole_opt;
-    CheckVistor check;
 
     FILE* file = std::fopen(opened_file, "r+");
     AOT_File aot_file(file);
@@ -113,7 +112,6 @@ void test_read_from_file(const char* opened_file)
         add_rels_vistor.start(*seg_ptr, &aot_file.get_rels());
         dis.start(*seg_ptr);    
         dis_print.start(*seg_ptr);
-        check.start(*seg_ptr);
     }
 }
 
@@ -122,4 +120,5 @@ int main(int argc, char** argv)
     const char* opened_file = "./hello_static.aot";
     const char* write_file = "./write.aot";
     test_write_to_file(opened_file, write_file);
+    test_read_from_file(write_file);
 }

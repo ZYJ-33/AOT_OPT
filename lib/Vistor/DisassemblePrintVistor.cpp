@@ -108,7 +108,10 @@ void DisassmblePrinterVistor::visit(TB& tb)
         else if(tb.false_branch_offset != TB_JMP_RESET_OFFSET_INVALID && i == tb.false_branch_offset)
         {
             std::cout<<"false_branch:\n";
-            std::cout<<"target addr: 0x" <<std::hex<<seg_start + tb.origin_aot_tb->x86_offset[0]<<std::endl;
+            if(tb.tbtype == NORMAL_B_FALSE_TYPE)
+                std::cout<<"target addr: 0x" <<std::hex<<seg_start + tb.origin_aot_tb->x86_offset[1]<<std::endl;
+            else
+                std::cout<<"target addr: 0x" <<std::hex<<seg_start + tb.origin_aot_tb->x86_offset[0]<<std::endl;
             std::cout<<"{\n";
             print_one_insn(*(iter->data));
             std::cout<<"}\n";
