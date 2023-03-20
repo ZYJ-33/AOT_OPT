@@ -19,6 +19,43 @@ void TB::visit(TB_Vistor& tb)
     tb.visit(*this);
 }
 
+bool TB::is_entry_block()
+{
+    return parents.size() == 0;
+}
+
+u_int32_t TB::true_branch_exec_count()
+{
+    if(this->true_branch != nullptr)
+            return 1;
+    return 0;
+}
+
+u_int32_t TB::false_branch_exec_count()
+{
+    if(this->false_branch != nullptr)
+             return 1;
+    return 0;
+}
+
+std::shared_ptr<TB> TB::max_exec_branch()
+{
+    auto true_count = this->true_branch_exec_count();
+    auto false_count = this->false_branch_exec_count();
+    if(true_count > false_count)
+            return true_branch;
+    return false_branch;
+}
+
+std::shared_ptr<TB> TB::other_branch(std::shared_ptr<TB> branch)
+{
+    assert(branch != nullptr);
+    assert(branch == true_branch || branch == false_branch);
+    if(branch == true_branch)
+            return false_branch;
+    return true_branch;
+}
+
 bool TB::in_scope_of_rel(u_int32_t start, u_int32_t count)
 {
     u_int32_t end_index = start + count - 1;

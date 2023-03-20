@@ -54,6 +54,12 @@ class TB
         u_int32_t how_many_rel();
         u_int32_t how_many_code();
         bool pipehole_opt_available();
+
+        u_int32_t true_branch_exec_count();
+        u_int32_t false_branch_exec_count();
+        bool is_entry_block();
+        std::shared_ptr<TB> max_exec_branch();
+        std::shared_ptr<TB> other_branch(std::shared_ptr<TB> branch);
 };
 
 class Segment

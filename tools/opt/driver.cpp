@@ -12,6 +12,7 @@
 #include "Vistor/Ld_Addi_Vistor.hpp"
 #include "Vistor/TU_Vistor.hpp"
 #include "AOTFileWriter/AOTFilerWriter.hpp"
+#include "PGO-AOTFileWriter/PGOAOTFileWriter.hpp"
 #include <cstdio>
 #include <cassert>
 #include <sys/stat.h>
@@ -97,7 +98,7 @@ void test_write_to_file(const char* opened_file, const char* write_file)
 
     u_int32_t file_sz = aot_file.how_many_bytes();
     char* buf = new char[file_sz];
-    AOTFileWriter::write_to_buf(buf, aot_file);
+    PGOAOTFileWriter::write_to_buf(buf, aot_file);
     fwrite(buf, file_sz, 1, writefile);
 
     fclose(file);
