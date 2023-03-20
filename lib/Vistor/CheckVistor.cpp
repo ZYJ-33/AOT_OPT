@@ -13,6 +13,7 @@ void CheckVistor::visit(TB& tb)
         case TU_BNE_TYPE:
         case TU_B_FALSE_TYPE:
         case TU_B_TRUE_TYPE:
+        case TU_B_TRUE_BEQ_TYPE:
             assert(tb.true_branch != nullptr && tb.false_branch != nullptr);
             break;
         case UNKNOW_TB_TYPE:

@@ -211,6 +211,26 @@ TB::TB(FILE* f, AOT_TB* aot_tb, u_int32_t SegBegin):origin_aot_tb(aot_tb)
                  false_branch_offset = TB_JMP_RESET_OFFSET_INVALID;
                  true_branch_offset = aot_tb->tu_jmp[1] >> 2;
              }
+             else if(tmp.opc == OPC_BEQ)
+             {
+                 tbtype = TU_B_TRUE_BEQ_TYPE;
+                 false_branch_offset = aot_tb->tu_jmp[1] >> 2;
+                 u_int32_t cur_index = false_branch_offset + 1;
+
+                 memset(&tmp, 0, sizeof(tmp));
+                 while(cur_index < code_size / 4)
+                 {
+                    decode(&tmp, ((u_int32_t*)code)[cur_index]);
+                    if(tmp.opc == OPC_B)
+                    {
+                        true_branch_offset = cur_index;
+                        break;
+                    }
+                    cur_index += 1;
+                 }
+                 assert(true_branch_offset != TB_JMP_RESET_OFFSET_INVALID);
+                 
+             }
              else if(tmp.opc == OPC_B)
              {
                  tbtype = TU_B_TRUE_TYPE;

@@ -131,6 +131,12 @@ static void write_tb_helper_function(std::shared_ptr<TB> tb_ptr, AOT_TB* target_
             case UNKNOW_TB_TYPE:
                 std::cerr<<"unknow tb type found in write_tb_helper_function pc:0x"<<std::hex<<tb_ptr->x86_addr<<std::endl;
                 exit(1);
+            case TU_B_TRUE_BEQ_TYPE:
+                {
+                    assert(aot_tb->tu_jmp[1] != TB_JMP_RESET_OFFSET_INVALID);
+                    assert(tb_ptr->false_branch_offset != TB_JMP_RESET_OFFSET_INVALID && tb_ptr->true_branch_offset != TB_JMP_RESET_OFFSET_INVALID);
+                    target_tb->tu_jmp[1] = tb_ptr->false_branch_offset << 2;
+                }
         }
 }
 
@@ -296,7 +302,7 @@ void TU_TBWriter::handle_linking(std::vector<std::shared_ptr<TB>>& tbs, u_int32_
                     }
                }
        }
-       else if(tb_ptr->tbtype == TU_BNE_TYPE || tb_ptr->tbtype == TU_BEQ_TYPE || tb_ptr->tbtype == TU_B_FALSE_TYPE || tb_ptr->tbtype == TU_B_TRUE_TYPE)
+       else if(tb_ptr->tbtype == TU_BNE_TYPE || tb_ptr->tbtype == TU_BEQ_TYPE || tb_ptr->tbtype == TU_B_FALSE_TYPE || tb_ptr->tbtype == TU_B_TRUE_TYPE || tb_ptr->tbtype == TU_B_TRUE_BEQ_TYPE)
        {
                u_int64_t cur_code_cache = TU_TBWriter::x86addr_to_codecache_offset[tb_ptr->x86_addr];
                if(tb_ptr->true_branch_offset != TB_JMP_RESET_OFFSET_INVALID && tb_ptr->true_branch != nullptr)

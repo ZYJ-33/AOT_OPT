@@ -16,6 +16,7 @@ enum TBtype
     TU_BEQ_TYPE,
     TU_B_FALSE_TYPE,
     TU_B_TRUE_TYPE,
+    TU_B_TRUE_BEQ_TYPE,
     NONE_B_TYPE,
 };
 
