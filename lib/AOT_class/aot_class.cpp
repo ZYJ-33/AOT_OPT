@@ -1,12 +1,13 @@
 #include"Basic/aot.hpp"
 #include"AOT_class/aot_class.hpp"
 #include"Basic/util.hpp"
+#include"Disassmbler/disassmbler.hpp"
 #include<cstring>
 #include<cstdlib>
 #include<climits>
 #include<cassert>
 #include<cstdio>
-#include "Vistor/TB_Vistor.hpp"
+#include"Vistor/TB_Vistor.hpp"
 
 std::map<u_int64_t, std::shared_ptr<TB>> x86AddrToTb;
 
@@ -36,6 +37,25 @@ u_int32_t TB::false_branch_exec_count()
     if(this->false_branch != nullptr)
              return 1;
     return 0;
+}
+
+void TB::convert_from_bne_to_beq()
+{
+     assert(condi_branch_offset != TB_JMP_RESET_OFFSET_INVALID
+            && true_branch_offset != TB_JMP_RESET_OFFSET_INVALID
+            && false_branch_offset != TB_JMP_RESET_OFFSET_INVALID);
+
+     ListNode<LoongArchInsInfo>* condi_jmp = dis_insns.get(condi_branch_offset);
+     LoongArchInsInfo* bne_insn = condi_jmp->data;
+     assert(bne_insn->opc == OPC_BNE);
+     LoongArchInsInfo* beq_insn = bne_insn;
+
+     u_int16_t tmp = true_branch_offset;
+     true_branch_offset = false_branch_offset;
+     false_branch_offset = tmp;
+     
+     beq_insn->opc = OPC_BEQ;
+     beq_insn->offs = false_branch_offset - condi_branch_offset;
 }
 
 std::shared_ptr<TB> TB::max_exec_branch()
@@ -166,6 +186,35 @@ TB::TB(FILE* f, AOT_TB* aot_tb, u_int32_t SegBegin):origin_aot_tb(aot_tb)
     fseek(f, aot_tb->tb_cache_offset, SEEK_SET);
     fread(code, code_size, 1, f);
     size_in_file += code_size;
+    false_branch_offset = TB_JMP_RESET_OFFSET_INVALID;
+    true_branch_offset = TB_JMP_RESET_OFFSET_INVALID;
+    condi_branch_offset = TB_JMP_RESET_OFFSET_INVALID;
+
+    if(aot_tb->jmp_reset_offsets[0] != TB_JMP_RESET_OFFSET_INVALID)
+            false_branch_offset = aot_tb->jmp_target_arg[0]/4;
+    if(aot_tb->jmp_reset_offsets[1] != TB_JMP_RESET_OFFSET_INVALID)
+            true_branch_offset = aot_tb->jmp_target_arg[1]/4;
+    
+    if(true_branch_offset != TB_JMP_RESET_OFFSET_INVALID && false_branch_offset != TB_JMP_RESET_OFFSET_INVALID)
+    {
+        u_int16_t cur = (true_branch_offset < false_branch_offset? true_branch_offset : false_branch_offset) - 1;
+        LoongArchInsInfo tmp;
+        
+        while(cur >= 0)
+        {
+             memset(&tmp, 0, sizeof(tmp));
+             u_int32_t insn = ((u_int32_t*)code)[cur];
+             decode(&tmp, insn);
+             if(tmp.opc == OPC_BEQ || tmp.opc == OPC_BNE)
+             {
+                    condi_branch_offset = cur;
+                    break;
+             }
+             cur -= 1;
+        }
+        assert(condi_branch_offset != TB_JMP_RESET_OFFSET_INVALID);
+    }
+            
     
     fseek(f, save, SEEK_SET);
 }
@@ -396,14 +445,13 @@ ListNode<LoongArchInsInfo>* TB::delete_ith_insn_alongwith_rel(ListNode<LoongArch
         j += 1;
     }
 
-    for(int i=0; i<2; i++)
-    {
-        if(origin_aot_tb->jmp_reset_offsets[i] != TB_JMP_RESET_OFFSET_INVALID)
-        {
-            if(origin_aot_tb->jmp_target_arg[i] > offset_of_ith_insn)
-                    origin_aot_tb->jmp_target_arg[i] -= 4;
-        }
-    }
+    if(true_branch_offset != TB_JMP_RESET_OFFSET_INVALID && true_branch_offset > i)
+            true_branch_offset -= 1;
+    if(false_branch_offset != TB_JMP_RESET_OFFSET_INVALID && false_branch_offset > i)
+            false_branch_offset -= 1;
+    if(condi_branch_offset != TB_JMP_RESET_OFFSET_INVALID && condi_branch_offset > i)
+            condi_branch_offset -= 1;
+
     return dis_insns.remove(node);
 }
 
@@ -433,14 +481,13 @@ ListNode<LoongArchInsInfo>* TB::delete_ith_insn(ListNode<LoongArchInsInfo>* node
         j += 1;
     }
 
-    for(int i=0; i<2; i++)
-    {
-        if(origin_aot_tb->jmp_reset_offsets[i] != TB_JMP_RESET_OFFSET_INVALID)
-        {
-            if(origin_aot_tb->jmp_target_arg[i] > offset_of_ith_insn)
-                    origin_aot_tb->jmp_target_arg[i] -= 4;
-        }
-    }
+    if(true_branch_offset != TB_JMP_RESET_OFFSET_INVALID && true_branch_offset > i)
+            true_branch_offset -= 1;
+    if(false_branch_offset != TB_JMP_RESET_OFFSET_INVALID && false_branch_offset > i)
+            false_branch_offset -= 1;
+    if(condi_branch_offset != TB_JMP_RESET_OFFSET_INVALID && condi_branch_offset > i)
+            condi_branch_offset -= 1;
+
     return dis_insns.remove(node);
 }
 

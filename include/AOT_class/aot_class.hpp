@@ -27,6 +27,11 @@ class TB
         char* code;
         u_int32_t code_size;
         bool pipehole_available;
+        
+        u_int16_t true_branch_offset;
+        u_int16_t false_branch_offset;
+        u_int16_t condi_branch_offset;
+
         std::shared_ptr<TB> true_branch;
         std::shared_ptr<TB> false_branch;
         std::vector<std::shared_ptr<TB>> parents;
@@ -54,6 +59,7 @@ class TB
         u_int32_t how_many_rel();
         u_int32_t how_many_code();
         bool pipehole_opt_available();
+        void convert_from_bne_to_beq();
 
         u_int32_t true_branch_exec_count();
         u_int32_t false_branch_exec_count();
