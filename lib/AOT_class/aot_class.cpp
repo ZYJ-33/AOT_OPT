@@ -50,6 +50,22 @@ void TB::convert_from_bne_to_beq()
      assert(bne_insn->opc == OPC_BNE);
      LoongArchInsInfo* beq_insn = bne_insn;
 
+     ListNode<LoongArchInsInfo>* true_branch_insn = dis_insns.get(true_branch_offset);
+     ListNode<LoongArchInsInfo>* false_branch_insn = dis_insns.get(false_branch_offset);
+     
+     assert(true_branch_insn->data->opc == OPC_B && false_branch_insn->data->opc == OPC_B);
+     ListNode<LoongArchInsInfo>* lower = false_branch_offset < true_branch_offset? false_branch_insn: true_branch_insn;
+     ListNode<LoongArchInsInfo>* higher = false_branch_offset > true_branch_offset? false_branch_insn: true_branch_insn;
+     
+     ListNode<LoongArchInsInfo>* middle_part = lower->next;
+     ListNode<LoongArchInsInfo>* tail_part = higher->next;
+
+     middle_part->prev = higher;
+     tail_part->prev = lower;
+
+     lower->next = tail_part;
+     higher->next = middle_part;
+
      u_int16_t tmp = true_branch_offset;
      true_branch_offset = false_branch_offset;
      false_branch_offset = tmp;
