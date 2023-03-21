@@ -54,11 +54,22 @@ void TB::convert_from_bne_to_beq()
      ListNode<LoongArchInsInfo>* false_branch_insn = dis_insns.get(false_branch_offset);
      
      assert(true_branch_insn->data->opc == OPC_B && false_branch_insn->data->opc == OPC_B);
-     ListNode<LoongArchInsInfo>* lower = false_branch_offset < true_branch_offset? false_branch_insn: true_branch_insn;
-     ListNode<LoongArchInsInfo>* higher = false_branch_offset > true_branch_offset? false_branch_insn: true_branch_insn;
+     assert(false_branch_offset < true_branch_offset);
+
+     ListNode<LoongArchInsInfo>* lower = false_branch_insn;
+     ListNode<LoongArchInsInfo>* higher = true_branch_insn;
      
      ListNode<LoongArchInsInfo>* middle_part = lower->next;
      ListNode<LoongArchInsInfo>* tail_part = higher->next;
+
+     u_int16_t count = 0;
+     ListNode<LoongArchInsInfo>* go = tail_part;
+     while(go != nullptr)
+     {
+        count += 1;
+        go = go->next;
+     }
+     count -= 1;
 
      middle_part->prev = higher;
      tail_part->prev = lower;
@@ -66,9 +77,8 @@ void TB::convert_from_bne_to_beq()
      lower->next = tail_part;
      higher->next = middle_part;
 
-     u_int16_t tmp = true_branch_offset;
      true_branch_offset = false_branch_offset;
-     false_branch_offset = tmp;
+     false_branch_offset = true_branch_offset + count + 1;
      
      beq_insn->opc = OPC_BEQ;
      beq_insn->offs = false_branch_offset - condi_branch_offset;
