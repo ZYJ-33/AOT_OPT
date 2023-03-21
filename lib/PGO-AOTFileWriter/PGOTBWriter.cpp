@@ -42,6 +42,10 @@ static void write_tb_helper_function(std::shared_ptr<TB> tb_ptr, AOT_TB* target_
         target_tb->tb_cache_size = 0;
         target_tb->rel_start_index = 0;
         target_tb->rel_end_index = 0;
+        if(tb_ptr->true_branch_offset != TB_JMP_RESET_OFFSET_INVALID)
+                target_tb->jmp_target_arg[1] = tb_ptr->true_branch_offset*4;
+        if(tb_ptr->false_branch_offset != TB_JMP_RESET_OFFSET_INVALID)
+                target_tb->jmp_target_arg[0] = tb_ptr->false_branch_offset*4;
 }
 
 void PGOTBWriter::handle_assemble(std::shared_ptr<TB> tb_ptr, u_int32_t* insn_ptr, AOT_TB* target_tb, AOT_Header* hdr)
@@ -93,7 +97,7 @@ void set_trace(std::vector<std::shared_ptr<TB>>& res, std::set<u_int64_t>& seen,
         else if(tb->false_branch == nullptr)
         {
             if(seen.find(tb->true_branch->x86_addr) == seen.end())
-                    set_trace(res, seen, tb->false_branch);
+                    set_trace(res, seen, tb->true_branch);
         }
         else if(tb->true_branch == nullptr)
         {
@@ -149,8 +153,43 @@ void sort_TBS(std::vector<std::shared_ptr<TB>>& tbs)
         tbs.push_back(tb_ptr);
 }
 
+#define B_MAX ((1<<25) -1)
+#define B_MIN (-1*(1<<25))
+void set_b_insn(u_int32_t* branch_insn_ptr, u_int64_t target_addr)
+{
+    int64_t offset = ((int64_t)target_addr - (int64_t)branch_insn_ptr)/4;
+    assert(B_MIN <= offset && offset <= B_MAX);
+
+    LoongArchInsInfo tmp;
+    memset(&tmp, 0, sizeof(tmp));
+
+    u_int32_t branch_insn = *branch_insn_ptr;
+    decode(&tmp, branch_insn);
+    assert(tmp.opc == OPC_B);
+    tmp.offs = offset;
+    branch_insn = encode(&tmp);
+
+    *branch_insn_ptr = branch_insn;
+}
+
 void handle_linking(std::vector<std::shared_ptr<TB>>& tbs)
-{    
+{
+     for(auto tb_ptr : tbs)
+     {
+         u_int32_t* code_cache_addr = (u_int32_t*)PGOTBWriter::x86addr_to_codecache_offset[tb_ptr->x86_addr];
+         if(tb_ptr->false_branch_offset != TB_JMP_RESET_OFFSET_INVALID && tb_ptr->false_branch != nullptr)
+         {
+               u_int32_t* branch_addr = &code_cache_addr[tb_ptr->false_branch_offset];
+               u_int64_t target_addr = PGOTBWriter::x86addr_to_codecache_offset[tb_ptr->false_branch->x86_addr];
+               set_b_insn(branch_addr, target_addr);
+         }
+         if(tb_ptr->true_branch_offset != TB_JMP_RESET_OFFSET_INVALID && tb_ptr->true_branch != nullptr)
+         {
+               u_int32_t* branch_addr = &code_cache_addr[tb_ptr->true_branch_offset];
+               u_int64_t target_addr = PGOTBWriter::x86addr_to_codecache_offset[tb_ptr->true_branch->x86_addr];
+               set_b_insn(branch_addr, target_addr);
+         }
+     }
 }
 
 void PGOTBWriter::write_to_buf(AOT_Header* hdr, AOT_Segment* seg, AOT_TB* tb_buf, AOT_rel* rel_buf, char* code_buf, std::vector<std::shared_ptr<TB>>& tbs)
