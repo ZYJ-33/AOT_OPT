@@ -45,14 +45,13 @@ void get_rel_after_branch(TB* tb, std::vector<Rel*>& res, bool is_true_branch)
     u_int32_t start_index = is_true_branch? tb->true_branch_offset:tb->false_branch_offset;
     u_int32_t end_index = is_true_branch? tb->dis_insns.total_size()-1 : tb->true_branch_offset-1;
 
-    u_int32_t index = 0;
 
     for(auto& rel : tb->rels)
     {
-        if(tb->rels[index].valid)
+        if(rel.valid)
         {
             u_int32_t rel_start_index = rel.rel.tc_offset/4;
-            u_int32_t rel_end_index = rel.rel.rel_slots_num + rel_end_index;
+            u_int32_t rel_end_index = rel.rel.rel_slots_num + rel_start_index;
             if(start_index <= rel_start_index && rel_end_index <= end_index)
                 res.push_back(&rel);
         }
