@@ -10,6 +10,15 @@
 class TB;
 class TB_Vistor;
 
+class Rel
+{
+    public:
+          AOT_rel rel;
+          bool valid;
+          Rel(AOT_rel rel): rel(rel), valid(true)
+          {}
+};
+
 class BranchInsnAndOffset
 {
     public:
@@ -35,8 +44,7 @@ class TB
         std::shared_ptr<TB> true_branch;
         std::shared_ptr<TB> false_branch;
         std::vector<std::shared_ptr<TB>> parents;
-        std::vector<AOT_rel> rels;
-        std::vector<bool> rels_valid; 
+        std::vector<Rel> rels;
         LinkList<LoongArchInsInfo> dis_insns;
         std::vector<BranchInsnAndOffset> b_insns;
         std::vector<BranchInsnAndOffset> bne_insns;

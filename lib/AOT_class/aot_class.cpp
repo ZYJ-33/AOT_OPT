@@ -7,6 +7,7 @@
 #include<climits>
 #include<cassert>
 #include<cstdio>
+#include<algorithm>
 #include"Vistor/TB_Vistor.hpp"
 
 std::map<u_int64_t, std::shared_ptr<TB>> x86AddrToTb;
@@ -39,7 +40,7 @@ u_int32_t TB::false_branch_exec_count()
     return 0;
 }
 
-void get_rel_after_branch(TB* tb, std::vector<AOT_rel*>& res, bool is_true_branch)
+void get_rel_after_branch(TB* tb, std::vector<Rel*>& res, bool is_true_branch)
 {
     u_int32_t start_index = is_true_branch? tb->true_branch_offset:tb->false_branch_offset;
     u_int32_t end_index = is_true_branch? tb->dis_insns.total_size()-1 : tb->true_branch_offset-1;
@@ -48,14 +49,19 @@ void get_rel_after_branch(TB* tb, std::vector<AOT_rel*>& res, bool is_true_branc
 
     for(auto& rel : tb->rels)
     {
-        if(tb->rels_valid[index])
+        if(tb->rels[index].valid)
         {
-            u_int32_t rel_start_index = rel.tc_offset/4;
-            u_int32_t rel_end_index = rel.rel_slots_num + rel_end_index;
+            u_int32_t rel_start_index = rel.rel.tc_offset/4;
+            u_int32_t rel_end_index = rel.rel.rel_slots_num + rel_end_index;
             if(start_index <= rel_start_index && rel_end_index <= end_index)
                 res.push_back(&rel);
         }
     }
+}
+
+bool rel_cmp(const Rel& a, const Rel& b)
+{
+    return a.rel.tc_offset < b.rel.tc_offset;
 }
 
 void TB::convert_from_bne_to_beq()
@@ -85,7 +91,7 @@ void TB::convert_from_bne_to_beq()
 
      u_int16_t count = 0;
      ListNode<LoongArchInsInfo>* go = tail_start;
-     while(go != tail_end)
+     while(go != dis_insns.end())
      {
         count += 1;
         go = go->next;
@@ -101,25 +107,27 @@ void TB::convert_from_bne_to_beq()
      middle_end->next = dis_insns.end();
      dis_insns.end()->prev = middle_end;
      
-     std::vector<AOT_rel*> rel_after_true_branch;
+     std::vector<Rel*> rel_after_true_branch;
      get_rel_after_branch(this, rel_after_true_branch, true);
-     std::vector<AOT_rel*> rel_after_false_branch;
+     std::vector<Rel*> rel_after_false_branch;
      get_rel_after_branch(this, rel_after_false_branch, false);
 
      for(auto rel_ptr: rel_after_true_branch)
-        rel_ptr->tc_offset -= (true_branch_offset*4);
+        rel_ptr->rel.tc_offset -= (true_branch_offset*4);
      for(auto rel_ptr: rel_after_false_branch)
-        rel_ptr->tc_offset -= (false_branch_offset*4);
+        rel_ptr->rel.tc_offset -= (false_branch_offset*4);
      
 
      true_branch_offset = false_branch_offset;
      for(auto rel_ptr: rel_after_true_branch)
-        rel_ptr->tc_offset += (true_branch_offset*4);
+        rel_ptr->rel.tc_offset += (true_branch_offset*4);
 
      false_branch_offset = true_branch_offset + count + 1;
      for(auto rel_ptr: rel_after_false_branch)
-        rel_ptr->tc_offset += (false_branch_offset*4);
+        rel_ptr->rel.tc_offset += (false_branch_offset*4);
      
+     std::sort(rels.begin(), rels.end(), rel_cmp);
+
      beq_insn->opc = OPC_BEQ;
      beq_insn->offs = false_branch_offset - condi_branch_offset;
 }
@@ -147,10 +155,10 @@ bool TB::in_scope_of_rel(u_int32_t start, u_int32_t count)
     u_int32_t end_index = start + count - 1;
     for(u_int32_t i=0; i<rels.size(); i++)
     {
-        if(rels_valid[i])
+        if(rels[i].valid)
         {
-            u_int32_t rel_start_index = rels[i].tc_offset/4;
-            u_int32_t rel_end_index = rel_start_index + rels[i].rel_slots_num - 1;
+            u_int32_t rel_start_index = rels[i].rel.tc_offset/4;
+            u_int32_t rel_end_index = rel_start_index + rels[i].rel.rel_slots_num - 1;
             if(!(end_index < rel_start_index || rel_end_index < start))
                     return true;
         }
@@ -194,7 +202,7 @@ ListNode<LoongArchInsInfo>* TB::add_insn(ListNode<LoongArchInsInfo>* prev, ListN
 
     for(auto& rel: rels)
     {
-        if(rels_valid[j] && (rel.tc_offset <= inserted_offset && inserted_offset < rel.tc_offset + (rel.rel_slots_num<<2)))
+        if(rel.valid && (rel.rel.tc_offset <= inserted_offset && inserted_offset < rel.rel.tc_offset + (rel.rel.rel_slots_num<<2)))
         {
             std::cerr<<"try to add an insn to middle of rel"<<std::endl;
             exit(1);
@@ -208,8 +216,8 @@ ListNode<LoongArchInsInfo>* TB::add_insn(ListNode<LoongArchInsInfo>* prev, ListN
     j = 0;
     for(auto& rel: rels)
     {
-        if(rels_valid[j] && rel.tc_offset >= inserted_offset)
-                rel.tc_offset += 4;
+        if(rel.valid && rel.rel.tc_offset >= inserted_offset)
+                rel.rel.tc_offset += 4;
         j += 1;
     }
     
@@ -303,9 +311,9 @@ bool TB::pipehole_opt_available()
                 bool res = false;
                 for(u_int32_t j = 0; j < rels.size(); j++)
                 {
-                    if(rels[j].kind == B_EPILOGUE)
+                    if(rels[j].rel.kind == B_EPILOGUE)
                     {
-                            if (b_insns[i].offset == rels[j].tc_offset/4)
+                            if (b_insns[i].offset == rels[j].rel.tc_offset/4)
                             {
                                  res = true;
                                  break;
@@ -334,9 +342,9 @@ bool TB::pipehole_opt_available()
                 bool res = false;
                 for(u_int32_t j = 0; j < rels.size(); j++)
                 {
-                    if(rels[j].kind == B_EPILOGUE)
+                    if(rels[j].rel.kind == B_EPILOGUE)
                     {
-                            if (b_insns[1].offset == rels[j].tc_offset/4)
+                            if (b_insns[1].offset == rels[j].rel.tc_offset/4)
                             {
                                  res = true;
                                  break;
@@ -363,9 +371,9 @@ bool TB::pipehole_opt_available()
                 bool res = false;
                 for(u_int32_t j = 0; j < rels.size(); j++)
                 {
-                    if(rels[j].kind == B_EPILOGUE)
+                    if(rels[j].rel.kind == B_EPILOGUE)
                     {
-                            if (b_insns[1].offset == rels[j].tc_offset/4)
+                            if (b_insns[1].offset == rels[j].rel.tc_offset/4)
                             {
                                  res = true;
                                  break;
@@ -416,8 +424,8 @@ const AOT_rel& TB::find_closest_load_target_addr_rel_entry(u_int32_t branch_insn
 u_int32_t TB::how_many_rel()
 {
     int count = 0;
-    for(auto valid: rels_valid)
-            if(valid)
+    for(auto& rel: rels)
+            if(rel.valid)
                     count += 1;
     return count;
 }
@@ -429,11 +437,11 @@ u_int32_t TB::how_many_code()
 
 ListNode<LoongArchInsInfo>* TB::delete_ith_rel(u_int64_t i)
 {
-    if(rels_valid[i])
+    if(rels[i].valid)
     {
-        AOT_rel& rel = rels[i];
-        u_int64_t ith_insn = rel.tc_offset >> 2;
-        u_int64_t count = rel.rel_slots_num;
+        Rel& rel = rels[i];
+        u_int64_t ith_insn = rel.rel.tc_offset >> 2;
+        u_int64_t count = rel.rel.rel_slots_num;
         ListNode<LoongArchInsInfo>* insn = dis_insns.get(ith_insn);
         while(count > 0)
         {
@@ -493,9 +501,9 @@ ListNode<LoongArchInsInfo>* TB::delete_ith_insn_alongwith_rel(ListNode<LoongArch
     u_int64_t j = 0;
     for(auto& rel: rels)
     {
-         if (rels_valid[j] && (rel.tc_offset <= offset_of_ith_insn &&  offset_of_ith_insn < rel.tc_offset + (rel.rel_slots_num<<2)))
+         if (rel.valid && (rel.rel.tc_offset <= offset_of_ith_insn &&  offset_of_ith_insn < rel.rel.tc_offset + (rel.rel.rel_slots_num<<2)))
          {
-              rels_valid[j] = false;
+              rel.valid = false;
               break;
          }
          j += 1;
@@ -506,8 +514,8 @@ ListNode<LoongArchInsInfo>* TB::delete_ith_insn_alongwith_rel(ListNode<LoongArch
     j = 0;
     for(auto& rel: rels)
     {
-        if(rels_valid[j] && offset_of_ith_insn < rel.tc_offset)
-                rel.tc_offset -= 4;
+        if(rel.valid && offset_of_ith_insn < rel.rel.tc_offset)
+                rel.rel.tc_offset -= 4;
         j += 1;
     }
 
@@ -529,7 +537,7 @@ ListNode<LoongArchInsInfo>* TB::delete_ith_insn(ListNode<LoongArchInsInfo>* node
     u_int64_t j = 0;
     for(auto& rel: rels)
     {
-         if (rels_valid[j] && (rel.tc_offset <= offset_of_ith_insn &&  offset_of_ith_insn < rel.tc_offset + (rel.rel_slots_num<<2)))
+         if (rel.valid && (rel.rel.tc_offset <= offset_of_ith_insn &&  offset_of_ith_insn < rel.rel.tc_offset + (rel.rel.rel_slots_num<<2)))
          {
                 std::cerr << " try to delete insn in rel entry: " << i <<"th insn"<< " ignore for now "<<std::endl;
                 return node;
@@ -542,8 +550,8 @@ ListNode<LoongArchInsInfo>* TB::delete_ith_insn(ListNode<LoongArchInsInfo>* node
     j = 0;
     for(auto& rel: rels)
     {
-        if(rels_valid[j] && (offset_of_ith_insn < rel.tc_offset))
-                rel.tc_offset -= 4;
+        if(rel.valid && (offset_of_ith_insn < rel.rel.tc_offset))
+                rel.rel.tc_offset -= 4;
         j += 1;
     }
 
@@ -726,9 +734,9 @@ u_int32_t TB::how_many_bytes()
 
     total += dis_insns.total_size()*4;
 
-    for(bool rel_valid: rels_valid)
+    for(auto& rel: rels)
     {
-        if(rel_valid)
+        if(rel.valid)
         {
                 total += sizeof(AOT_rel);
                 count += 1;

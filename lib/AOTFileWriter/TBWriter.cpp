@@ -7,9 +7,10 @@ static u_int32_t rel_cur_index = 0;
 void TBWriter::handle_rels(std::shared_ptr<TB> tb_ptr, AOT_rel* rel_buf, AOT_TB* target_tb, AOT_Header* hdr)
 {
     //TODO figure out what to do if there is no valid rel
-    bool any_valid = true;
-    for(auto valid: tb_ptr->rels_valid)
-        any_valid |= valid;
+    bool any_valid = false;
+    for(auto& rel: tb_ptr->rels)
+        any_valid |= rel.valid;
+
     if(!any_valid)
     {
         target_tb->rel_start_index = 1;
@@ -20,12 +21,12 @@ void TBWriter::handle_rels(std::shared_ptr<TB> tb_ptr, AOT_rel* rel_buf, AOT_TB*
     target_tb->rel_start_index = rel_cur_index;
     for(u_int32_t i=0; i<tb_ptr->rels.size(); i++)
     {
-        if(tb_ptr->rels_valid[i])
+        if(tb_ptr->rels[i].valid)
         {
             if(rel_cur_index == 0)
                 hdr->reltable_offset = ((uintptr_t)rel_buf - (uintptr_t)hdr);
 
-            memcpy((void*)rel_buf, (void*)&tb_ptr->rels[i], sizeof(AOT_rel));
+            memcpy((void*)rel_buf, (void*)&(tb_ptr->rels[i].rel), sizeof(AOT_rel));
             rel_cur_index += 1;
             rel_buf += 1; 
         }

@@ -65,12 +65,11 @@ std::shared_ptr<TB> unify_srcblock_no_successor(std::shared_ptr<TB> dstblock, st
 
     for(u_int32_t i=0; i < srcblock->rels.size(); i++)
     {
-        if(srcblock->rels_valid[i])
+        if(srcblock->rels[i].valid)
         {
-            dstblock->rels_valid.push_back(true);
-            dstblock->rels.push_back(srcblock->rels[i]);
+            dstblock->rels.emplace_back(srcblock->rels[i].rel);
             u_int32_t dst_rel_last_index = dstblock->rels.size()-1;
-            dstblock->rels[dst_rel_last_index].tc_offset += new_base_offset;
+            dstblock->rels[dst_rel_last_index].rel.tc_offset += new_base_offset;
         }
     }
     

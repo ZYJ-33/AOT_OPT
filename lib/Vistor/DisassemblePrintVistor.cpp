@@ -63,15 +63,15 @@ void DisassmblePrinterVistor::visit(TB& tb)
    u_int32_t rel_cur = 0;
    u_int64_t i = 0;
   
-   while(rel_cur < tb.rels_valid.size() && tb.rels_valid[rel_cur] == false)
+   while(rel_cur < tb.rels.size() && tb.rels[rel_cur].valid == false)
            rel_cur++;
 
    for(auto iter = tb.dis_insns.begin(); iter != tb.dis_insns.end();)
    {
-        if(rel_cur < tb.rels_valid.size() && i == ( (tb.rels[rel_cur].tc_offset) / 4) )
+        if(rel_cur < tb.rels.size() && i == ( (tb.rels[rel_cur].rel.tc_offset) / 4) )
         {
-            int count = tb.rels[rel_cur].rel_slots_num;
-            std::cout<<rel_kind2name[tb.rels[rel_cur].kind]<<std::endl;
+            int count = tb.rels[rel_cur].rel.rel_slots_num;
+            std::cout<<rel_kind2name[tb.rels[rel_cur].rel.kind]<<std::endl;
             std::cout<<"{"<<std::endl;
             while(count > 0)
             {
@@ -82,7 +82,7 @@ void DisassmblePrinterVistor::visit(TB& tb)
             } 
             std::cout<<"}"<<std::endl;
             rel_cur += 1;
-            while(rel_cur < tb.rels_valid.size() && tb.rels_valid[rel_cur] == false)
+            while(rel_cur < tb.rels.size() && tb.rels[rel_cur].valid == false)
                 rel_cur++;
         }
         else if(tb.origin_aot_tb->jmp_reset_offsets[0] != TB_JMP_RESET_OFFSET_INVALID 

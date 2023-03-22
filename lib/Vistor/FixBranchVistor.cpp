@@ -5,12 +5,12 @@ const AOT_rel* find_closest_LOAD_TB_ADDR_rel_entry(TB& tb, u_int32_t branch_insn
     const AOT_rel* closest = nullptr;
     for(auto i=0; i<tb.rels.size(); i++)
     {
-        if(tb.rels[i].kind == LOAD_TB_ADDR
-          &&tb.rels_valid[i]
-          &&branch_insn_offset < tb.rels[i].tc_offset)
+        if(tb.rels[i].rel.kind == LOAD_TB_ADDR
+          &&tb.rels[i].valid
+          &&branch_insn_offset < tb.rels[i].rel.tc_offset)
         {
-            if(closest == nullptr || tb.rels[i].tc_offset < closest->tc_offset)
-              closest = &tb.rels[i];
+            if(closest == nullptr || tb.rels[i].rel.tc_offset < closest->tc_offset)
+              closest = &tb.rels[i].rel;
         }
     }
     return closest;
