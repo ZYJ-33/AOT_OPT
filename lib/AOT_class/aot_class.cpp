@@ -51,7 +51,7 @@ void get_rel_after_branch(TB* tb, std::vector<Rel*>& res, bool is_true_branch)
         if(rel.valid)
         {
             u_int32_t rel_start_index = rel.rel.tc_offset/4;
-            u_int32_t rel_end_index = rel.rel.rel_slots_num + rel_start_index;
+            u_int32_t rel_end_index = rel.rel.rel_slots_num + rel_start_index - 1;
             if(start_index <= rel_start_index && rel_end_index <= end_index)
                 res.push_back(&rel);
         }
