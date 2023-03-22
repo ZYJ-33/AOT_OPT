@@ -59,24 +59,29 @@ void TB::convert_from_bne_to_beq()
      ListNode<LoongArchInsInfo>* lower = false_branch_insn;
      ListNode<LoongArchInsInfo>* higher = true_branch_insn;
      
-     ListNode<LoongArchInsInfo>* middle_part = lower->next;
-     ListNode<LoongArchInsInfo>* tail_part = higher->next;
+     ListNode<LoongArchInsInfo>* middle_start = lower->next;
+     ListNode<LoongArchInsInfo>* middle_end = higher->prev;
+     ListNode<LoongArchInsInfo>* tail_start = higher->next;
+     ListNode<LoongArchInsInfo>* tail_end = dis_insns.end()->prev;
 
      u_int16_t count = 0;
-     ListNode<LoongArchInsInfo>* go = tail_part;
-     while(go != nullptr)
+     ListNode<LoongArchInsInfo>* go = tail_start;
+     while(go != tail_end)
      {
         count += 1;
         go = go->next;
      }
-     count -= 1;
 
-     middle_part->prev = higher;
-     tail_part->prev = lower;
+     lower->next = tail_start;
+     tail_start->prev = lower;
+     tail_end->next = higher;
+     higher->prev = tail_end;
 
-     lower->next = tail_part;
-     higher->next = middle_part;
-
+     higher->next = middle_start;
+     middle_start->prev = higher;
+     middle_end->next = dis_insns.end();
+     dis_insns.end()->prev = middle_end;
+     
      true_branch_offset = false_branch_offset;
      false_branch_offset = true_branch_offset + count + 1;
      
