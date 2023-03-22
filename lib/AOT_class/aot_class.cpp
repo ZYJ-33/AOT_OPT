@@ -39,6 +39,25 @@ u_int32_t TB::false_branch_exec_count()
     return 0;
 }
 
+void get_rel_after_branch(TB* tb, std::vector<AOT_rel*>& res, bool is_true_branch)
+{
+    u_int32_t start_index = is_true_branch? tb->true_branch_offset:tb->false_branch_offset;
+    u_int32_t end_index = is_true_branch? tb->dis_insns.total_size()-1 : tb->true_branch_offset-1;
+
+    u_int32_t index = 0;
+
+    for(auto& rel : tb->rels)
+    {
+        if(tb->rels_valid[index])
+        {
+            u_int32_t rel_start_index = rel.tc_offset/4;
+            u_int32_t rel_end_index = rel.rel_slots_num + rel_end_index;
+            if(start_index <= rel_start_index && rel_end_index <= end_index)
+                res.push_back(&rel);
+        }
+    }
+}
+
 void TB::convert_from_bne_to_beq()
 {
      assert(condi_branch_offset != TB_JMP_RESET_OFFSET_INVALID
@@ -82,8 +101,24 @@ void TB::convert_from_bne_to_beq()
      middle_end->next = dis_insns.end();
      dis_insns.end()->prev = middle_end;
      
+     std::vector<AOT_rel*> rel_after_true_branch;
+     get_rel_after_branch(this, rel_after_true_branch, true);
+     std::vector<AOT_rel*> rel_after_false_branch;
+     get_rel_after_branch(this, rel_after_false_branch, false);
+
+     for(auto rel_ptr: rel_after_true_branch)
+        rel_ptr->tc_offset -= (true_branch_offset*4);
+     for(auto rel_ptr: rel_after_false_branch)
+        rel_ptr->tc_offset -= (false_branch_offset*4);
+     
+
      true_branch_offset = false_branch_offset;
+     for(auto rel_ptr: rel_after_true_branch)
+        rel_ptr->tc_offset += (true_branch_offset*4);
+
      false_branch_offset = true_branch_offset + count + 1;
+     for(auto rel_ptr: rel_after_false_branch)
+        rel_ptr->tc_offset += (false_branch_offset*4);
      
      beq_insn->opc = OPC_BEQ;
      beq_insn->offs = false_branch_offset - condi_branch_offset;
