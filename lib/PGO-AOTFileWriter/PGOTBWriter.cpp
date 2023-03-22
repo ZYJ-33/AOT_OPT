@@ -178,17 +178,33 @@ void handle_linking(std::vector<std::shared_ptr<TB>>& tbs)
      for(auto tb_ptr : tbs)
      {
          u_int32_t* code_cache_addr = (u_int32_t*)PGOTBWriter::x86addr_to_codecache_offset[tb_ptr->x86_addr];
-         if(tb_ptr->false_branch_offset != TB_JMP_RESET_OFFSET_INVALID && tb_ptr->false_branch != nullptr)
+         if(tb_ptr->false_branch_offset != TB_JMP_RESET_OFFSET_INVALID)
          {
                u_int32_t* branch_addr = &code_cache_addr[tb_ptr->false_branch_offset];
-               u_int64_t target_addr = PGOTBWriter::x86addr_to_codecache_offset[tb_ptr->false_branch->x86_addr];
-               set_b_insn(branch_addr, target_addr);
+               if(tb_ptr->false_branch != nullptr)
+               {
+                    u_int64_t target_addr = PGOTBWriter::x86addr_to_codecache_offset[tb_ptr->false_branch->x86_addr];
+                    set_b_insn(branch_addr, target_addr);
+               }
+               else
+               {
+                    u_int64_t target_addr = (u_int64_t)(branch_addr) + 8;
+                    set_b_insn(branch_addr, target_addr);
+               }
          }
-         if(tb_ptr->true_branch_offset != TB_JMP_RESET_OFFSET_INVALID && tb_ptr->true_branch != nullptr)
+         if(tb_ptr->true_branch_offset != TB_JMP_RESET_OFFSET_INVALID)
          {
                u_int32_t* branch_addr = &code_cache_addr[tb_ptr->true_branch_offset];
-               u_int64_t target_addr = PGOTBWriter::x86addr_to_codecache_offset[tb_ptr->true_branch->x86_addr];
-               set_b_insn(branch_addr, target_addr);
+               if(tb_ptr->true_branch != nullptr)
+               {
+                    u_int64_t target_addr = PGOTBWriter::x86addr_to_codecache_offset[tb_ptr->true_branch->x86_addr];
+                    set_b_insn(branch_addr, target_addr);
+               }
+               else
+               {
+                    u_int64_t target_addr = (u_int64_t)(branch_addr) + 8;
+                    set_b_insn(branch_addr, target_addr);
+               }
          }
      }
 }
@@ -211,5 +227,5 @@ void PGOTBWriter::write_to_buf(AOT_Header* hdr, AOT_Segment* seg, AOT_TB* tb_buf
     }
     hdr->reltable_num = rel_cur_index; 
 
-    //handle_linking((u_int32_t)code_buf);   
+    handle_linking(tbs);   
 }
