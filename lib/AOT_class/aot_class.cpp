@@ -83,6 +83,9 @@ void TB::convert_from_bne_to_beq()
      ListNode<LoongArchInsInfo>* lower = false_branch_insn;
      ListNode<LoongArchInsInfo>* higher = true_branch_insn;
      
+     
+     if(lower->next != higher && higher->next != dis_insns.end())
+     {
      ListNode<LoongArchInsInfo>* middle_start = lower->next;
      ListNode<LoongArchInsInfo>* middle_end = higher->prev;
      ListNode<LoongArchInsInfo>* tail_start = higher->next;
@@ -129,6 +132,58 @@ void TB::convert_from_bne_to_beq()
 
      beq_insn->opc = OPC_BEQ;
      beq_insn->offs = false_branch_offset - condi_branch_offset;
+     }
+     else if(lower->next == higher && higher->next == dis_insns.end())
+     {
+         assert(false_branch_offset + 1 == true_branch_offset);
+         auto tmp = false_branch_offset;
+         false_branch_offset = true_branch_offset;
+         true_branch_offset = tmp;
+     }
+     else if(lower->next == higher && higher->next != dis_insns.end())
+     {
+        ListNode<LoongArchInsInfo>* tail_start = higher->next;
+        ListNode<LoongArchInsInfo>* tail_end = dis_insns.end()->prev;
+
+        u_int16_t count = 0;
+        ListNode<LoongArchInsInfo>* go = tail_start;
+        while(go != dis_insns.end())
+        {
+            count += 1;
+            go = go->next;
+        }
+
+        std::vector<Rel*> rel_after_true_branch;
+        get_rel_after_branch(this, rel_after_true_branch, true);
+
+        lower->next = tail_start;
+        tail_start->prev = lower;
+        
+        tail_end->next = higher;
+        higher->prev = tail_end;
+
+        higher->next = dis_insns.end();
+        dis_insns.end()->prev = higher;
+
+        for(auto rel_ptr: rel_after_true_branch)
+            rel_ptr->rel.tc_offset -= (true_branch_offset*4);
+        
+        true_branch_offset = false_branch_offset;
+
+        for(auto rel_ptr: rel_after_true_branch)
+            rel_ptr->rel.tc_offset += (true_branch_offset*4);
+
+        std::sort(rels.begin(), rels.end(), rel_cmp);
+        false_branch_offset = true_branch_offset + count + 1;
+        
+        beq_insn->opc = OPC_BEQ;
+        beq_insn->offs = false_branch_offset - condi_branch_offset;
+     }
+     else if(lower->next != higher && higher->next == dis_insns.end())
+     {
+        std::cerr<<"in convert_from_bne_to_beq \n";
+        exit(1);
+     }
 }
 
 std::shared_ptr<TB> TB::max_exec_branch()
