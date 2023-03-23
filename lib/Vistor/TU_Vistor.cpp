@@ -14,18 +14,18 @@ void get_all_entrys_block(Segment& seg, std::vector<std::shared_ptr<TB>>& result
 
 bool only_one_successor(std::shared_ptr<TB> tb)
 {
-    return (tb->origin_aot_tb->jmp_reset_offsets[0] == TB_JMP_RESET_OFFSET_INVALID
-           && tb->origin_aot_tb->jmp_reset_offsets[1] != TB_JMP_RESET_OFFSET_INVALID
+    return (tb->false_branch_offset == TB_JMP_RESET_OFFSET_INVALID
+           && tb->true_branch_offset != TB_JMP_RESET_OFFSET_INVALID
            && tb->true_branch != nullptr)
-           ||(tb->origin_aot_tb->jmp_reset_offsets[0] != TB_JMP_RESET_OFFSET_INVALID
-           && tb->origin_aot_tb->jmp_reset_offsets[1] == TB_JMP_RESET_OFFSET_INVALID
+           ||(tb->false_branch_offset != TB_JMP_RESET_OFFSET_INVALID
+           && tb->true_branch_offset == TB_JMP_RESET_OFFSET_INVALID
            && tb->false_branch != nullptr);
 }
 
 bool no_successor(std::shared_ptr<TB> tb)
 {
-    return (tb->origin_aot_tb->jmp_reset_offsets[0] == TB_JMP_RESET_OFFSET_INVALID
-           && tb->origin_aot_tb->jmp_reset_offsets[1] == TB_JMP_RESET_OFFSET_INVALID);
+    return (tb->true_branch_offset == TB_JMP_RESET_OFFSET_INVALID
+           && tb->false_branch_offset == TB_JMP_RESET_OFFSET_INVALID);
 }
 
 std::shared_ptr<TB> get_the_onlyone_successor(std::shared_ptr<TB> tb)
@@ -86,10 +86,10 @@ std::shared_ptr<TB> unify_srcblock_no_successor(std::shared_ptr<TB> dstblock, st
         check_and_add_branch_insn(*dstblock, new_insn, cur_index);
     }
     
-    if(srcblock->origin_aot_tb->jmp_reset_offsets[0] != TB_JMP_RESET_OFFSET_INVALID)
+    if(srcblock->false_branch_offset != TB_JMP_RESET_OFFSET_INVALID)
     {
       dstblock->origin_aot_tb->jmp_reset_offsets[0] = new_base_offset + srcblock->origin_aot_tb->jmp_reset_offsets[0];
-      dstblock->origin_aot_tb->jmp_target_arg[0] = new_base_offset + srcblock->origin_aot_tb->jmp_target_arg[0];
+      dstblock->false_branch_offset = new_base_offset + srcblock->false_branch_offset;
     }
     else
         dstblock->origin_aot_tb->jmp_reset_offsets[0] = TB_JMP_RESET_OFFSET_INVALID;
@@ -97,7 +97,7 @@ std::shared_ptr<TB> unify_srcblock_no_successor(std::shared_ptr<TB> dstblock, st
     if(srcblock->origin_aot_tb->jmp_reset_offsets[1] != TB_JMP_RESET_OFFSET_INVALID)
     {
       dstblock->origin_aot_tb->jmp_reset_offsets[1] = new_base_offset + srcblock->origin_aot_tb->jmp_reset_offsets[1];
-      dstblock->origin_aot_tb->jmp_target_arg[1] = new_base_offset + srcblock->origin_aot_tb->jmp_target_arg[1];
+      dstblock->true_branch_offset = new_base_offset + srcblock->origin_aot_tb->true_branch_offset;
     }
     else
         dstblock->origin_aot_tb->jmp_reset_offsets[1] = TB_JMP_RESET_OFFSET_INVALID;
@@ -117,7 +117,7 @@ void unify_one_successor(std::shared_ptr<TB> cur, std::set<u_int64_t>& parents, 
         std::shared_ptr<TB> succ = get_the_onlyone_successor(cur); 
         if(no_successor(succ))
         {
-                bool is_true_branch = cur->origin_aot_tb->jmp_reset_offsets[1] != TB_JMP_RESET_OFFSET_INVALID ? true:false;
+                bool is_true_branch = cur->true_branch_offset != TB_JMP_RESET_OFFSET_INVALID ? true:false;
                 unify_srcblock_no_successor(cur, succ, is_true_branch);
                 return; 
         }

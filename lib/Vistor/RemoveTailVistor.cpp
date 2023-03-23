@@ -4,13 +4,13 @@ void RemoveTailVistor::remove_tail_of(TB& tb, uint which)
 {
     assert(which == 0 || which == 1);
 
-    int32_t branch_insn_index = tb.origin_aot_tb->jmp_target_arg[which]>>2;
+    int32_t branch_insn_index = which==0? tb.false_branch_offset : tb.true_branch_offset;
     int32_t total_insn_count = tb.dis_insns.total_size();
     int remain = -1;
     if(which == 0)
     {
-         if(tb.origin_aot_tb->jmp_reset_offsets[1] != TB_JMP_RESET_OFFSET_INVALID)
-                 remain = (tb.origin_aot_tb->jmp_target_arg[1]>>2)-branch_insn_index-1;
+         if(tb.true_branch_offset != TB_JMP_RESET_OFFSET_INVALID)
+                 remain = (tb.true_branch_offset)-branch_insn_index-1;
          else
                  remain = total_insn_count - branch_insn_index - 1;
     }
@@ -44,16 +44,16 @@ void RemoveTailVistor::start(Segment& seg)
 
 void RemoveTailVistor::visit(TB& tb)
 {
-    if((tb.origin_aot_tb->jmp_reset_offsets[0] != TB_JMP_RESET_OFFSET_INVALID
-       && tb.origin_aot_tb->jmp_reset_offsets[1] != TB_JMP_RESET_OFFSET_INVALID)
+    if((tb.false_branch_offset != TB_JMP_RESET_OFFSET_INVALID
+       && tb.true_branch_offset != TB_JMP_RESET_OFFSET_INVALID)
        &&(tb.true_branch != nullptr && tb.false_branch != nullptr))
     {
        remove_tail_of(tb, 0);
        remove_tail_of(tb, 1);
     }
-    else if(tb.origin_aot_tb->jmp_reset_offsets[0] != TB_JMP_RESET_OFFSET_INVALID && tb.false_branch != nullptr)
+    else if(tb.false_branch_offset != TB_JMP_RESET_OFFSET_INVALID && tb.false_branch != nullptr)
         remove_tail_of(tb, 0);
-    else if(tb.origin_aot_tb->jmp_reset_offsets[1] != TB_JMP_RESET_OFFSET_INVALID && tb.true_branch != nullptr)
+    else if(tb.true_branch_offset != TB_JMP_RESET_OFFSET_INVALID && tb.true_branch != nullptr)
         remove_tail_of(tb, 1);
     else
     {}
